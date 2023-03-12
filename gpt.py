@@ -8,7 +8,7 @@ from prompt_toolkit.key_binding import KeyBindings
 
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
-SYSTEM_PROMPT_DEV = "You are a helpful assistant who is an expert in software development. You are helping a user who is a software developer. Your responses are short and concise. You include code snippets when appropriate. Code snippets are formatted using Markdown."
+SYSTEM_PROMPT_DEV = f"You are a helpful assistant who is an expert in software development. You are helping a user who is a software developer. Your responses are short and concise. You include code snippets when appropriate. Code snippets are formatted using Markdown. User's `uname`: {os.uname()}"
 
 INIT_USER_PROMPT_DEV = "Your responses must be short and concise. Do not include explanations unless asked."
 
