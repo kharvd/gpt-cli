@@ -20,41 +20,14 @@ def init_messages():
 
 TERMINAL_WELCOME = """
 Hi! I'm here to help. Type `q` or Ctrl-D to exit, `c` or Ctrl-C to clear
-the conversation. To enter multi-line mode, enter a backslash `\` followed
-by a new line. Exit the multi-line mode by pressing ESC and then Enter.
+the conversation, `r` or Ctrl-R to re-generate the last response. 
+To enter multi-line mode, enter a backslash `\` followed by a new line.
+Exit the multi-line mode by pressing ESC and then Enter (Meta+Enter).
 """
 
-CLEAR_SHORTCUT = "c"
-QUIT_SHORTCUT = "q"
-RERUN_SHORTCUT = "r"
-
-term = Terminal()
-
-bindings = KeyBindings()
-
-
-@bindings.add("c-c")
-def _(event):
-    if len(event.current_buffer.text) > 0:
-        event.current_buffer.reset()
-    else:
-        event.app.exit(exception=KeyboardInterrupt, style="class:aborting")
-
-
-class RerunPromptException(Exception):
-    pass
-
-
-@bindings.add("c-r")
-def _(event):
-    if len(event.current_buffer.text) == 0:
-        event.app.exit(exception=RerunPromptException, style="class:aborting")
-
-
-# @bindings.add('c-x')
-# def _(event):
-#     " Exit when `c-x` is pressed. "
-#     event.app.exit()
+COMMAND_CLEAR = ("clear", "c")
+COMMAND_QUIT = ("quit", "q")
+COMMAND_RERUN = ("rerun", "r")
 
 
 def complete_chat(messages):
@@ -69,80 +42,103 @@ def complete_chat(messages):
             yield next_choice["delta"]["content"]
 
 
-def next_input(session):
-    line = None
+class ChatSession:
+    def __init__(self):
+        self.messages = init_messages()
+        self.term = Terminal()
+        self.prompt_session = PromptSession()
 
-    try:
-        line = session.prompt(
-            "> ",
-            vi_mode=True,
-            multiline=False,
-            enable_open_in_editor=True,
-            key_bindings=bindings,
-        )
-    except EOFError:
-        return QUIT_SHORTCUT
-    except KeyboardInterrupt:
-        return CLEAR_SHORTCUT
-    except RerunPromptException:
-        return RERUN_SHORTCUT
+    def prompt(self, multiline=False):
+        bindings = KeyBindings()
 
-    if line != "\\":
-        return line
+        @bindings.add("c-c")
+        def _ctrl_c(event):
+            if len(event.current_buffer.text) == 0 and not multiline:
+                event.current_buffer.text = COMMAND_CLEAR[0]
+                event.current_buffer.validate_and_handle()
+            else:
+                event.app.exit(exception=KeyboardInterrupt, style="class:aborting")
 
-    try:
-        return session.prompt(
-            "multiline> ", multiline=True, vi_mode=True, enable_open_in_editor=True
-        )
-    except (EOFError, KeyboardInterrupt):
-        return next_input(session)
+        @bindings.add("c-d")
+        def _ctrl_d(event):
+            if len(event.current_buffer.text) == 0:
+                if not multiline:
+                    event.current_buffer.text = COMMAND_QUIT[0]
+                event.current_buffer.validate_and_handle()
 
+        @bindings.add("c-r")
+        def _ctrl_r(event):
+            if len(event.current_buffer.text) == 0:
+                event.current_buffer.text = COMMAND_RERUN[0]
+                event.current_buffer.validate_and_handle()
 
-def respond(messages):
-    next_response = []
-    try:
-        for response in complete_chat(messages):
-            next_response.append(response)
-            print(term.green(response), end="", flush=True)
-    except KeyboardInterrupt:
-        # If the user interrupts the chat completion, we'll just return what we have so far
-        pass
+        try:
+            return self.prompt_session.prompt(
+                "> " if not multiline else "multiline> ",
+                vi_mode=True,
+                multiline=multiline,
+                enable_open_in_editor=True,
+                key_bindings=bindings,
+            )
+        except KeyboardInterrupt:
+            return ""
 
-    print("\n")
-    next_response = {"role": "assistant", "content": "".join(next_response)}
+    def clear(self):
+        self.messages = init_messages()
+        print(self.term.bold("Cleared the conversation."))
 
-    return next_response
+    def rerun(self):
+        self.messages = self.messages[:-1]
+        print(self.term.bold("Re-generating the last message."))
+        self.respond()
+
+    def request_input(self):
+        line = self.prompt()
+
+        if line != "\\":
+            return line
+
+        return self.prompt(multiline=True)
+
+    def respond(self):
+        next_response = []
+        try:
+            for response in complete_chat(self.messages):
+                next_response.append(response)
+                print(self.term.green(response), end="", flush=True)
+        except KeyboardInterrupt:
+            # If the user interrupts the chat completion, we'll just return what we have so far
+            pass
+
+        print("\n")
+        next_response = {"role": "assistant", "content": "".join(next_response)}
+        self.messages.append(next_response)
+
+    def loop(self):
+        print(self.term.bold(TERMINAL_WELCOME))
+
+        while True:
+            while (next_user_input := self.request_input()) == "":
+                pass
+
+            if next_user_input in COMMAND_QUIT:
+                break
+
+            if next_user_input in COMMAND_CLEAR:
+                self.clear()
+                continue
+
+            if next_user_input in COMMAND_RERUN:
+                self.rerun()
+                continue
+
+            self.messages.append({"role": "user", "content": next_user_input})
+            self.respond()
 
 
 def main():
-    session = PromptSession()
-    current_messages = init_messages()
-
-    print(term.bold(TERMINAL_WELCOME))
-
-    while True:
-        while (next_user_input := next_input(session)) == "":
-            pass
-
-        if next_user_input in (QUIT_SHORTCUT, "quit"):
-            break
-
-        if next_user_input in (CLEAR_SHORTCUT, "clear"):
-            current_messages = init_messages()
-            print(term.bold("Cleared the conversation."))
-            continue
-
-        if next_user_input in (RERUN_SHORTCUT, "rerun"):
-            current_messages = current_messages[:-1]
-            print(term.bold("Re-generating the last message."))
-            next_response = respond(current_messages)
-            current_messages.append(next_response)
-            continue
-
-        current_messages.append({"role": "user", "content": next_user_input})
-
-        next_response = respond(current_messages)
-        current_messages.append(next_response)
+    session = ChatSession()
+    session.loop()
 
 
 if __name__ == "__main__":
