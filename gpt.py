@@ -1,21 +1,28 @@
 import openai
 import os
+import argparse
+import sys
 from blessings import Terminal
 from prompt_toolkit import PromptSession
 from prompt_toolkit.key_binding import KeyBindings
 
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
-SYSTEM_PROMPT = """You are a helpful assistant who is an expert in software development. You are helping a user who is a software developer. Your responses are short and concise. You include code snippets when appropriate. Code snippets are formatted using Markdown. If the user asks a question about something other than software development, you are happy to help with that too."""
+SYSTEM_PROMPT_DEV = "You are a helpful assistant who is an expert in software development. You are helping a user who is a software developer. Your responses are short and concise. You include code snippets when appropriate. Code snippets are formatted using Markdown. If the user asks a question about something other than software development, you are happy to help with that too."
 
-INIT_USER_PROMPT = """Your responses must be short and concise. Do not include explanations unless asked."""
+INIT_USER_PROMPT_DEV = "Your responses must be short and concise. Do not include explanations unless asked."
+
+SYSTEM_PROMPT_GENERAL = "You are a helpful assistant."
 
 
-def init_messages():
-    return [
-        {"role": "system", "content": SYSTEM_PROMPT},
-        {"role": "user", "content": INIT_USER_PROMPT},
-    ]
+def init_messages(assistant_type):
+    if assistant_type == "dev":
+        return [
+            {"role": "system", "content": SYSTEM_PROMPT_DEV},
+            {"role": "user", "content": INIT_USER_PROMPT_DEV},
+        ]
+    elif assistant_type == "general":
+        return [{"role": "system", "content": SYSTEM_PROMPT_GENERAL}]
 
 
 TERMINAL_WELCOME = """
@@ -43,8 +50,9 @@ def complete_chat(messages):
 
 
 class ChatSession:
-    def __init__(self):
-        self.messages = init_messages()
+    def __init__(self, assistant_type):
+        self.assistant_type = assistant_type
+        self.messages = init_messages(assistant_type)
         self.term = Terminal()
         self.prompt_session = PromptSession()
 
@@ -84,7 +92,7 @@ class ChatSession:
             return ""
 
     def clear(self):
-        self.messages = init_messages()
+        self.messages = init_messages(self.assistant_type)
         print(self.term.bold("Cleared the conversation."))
 
     def rerun(self):
@@ -137,7 +145,17 @@ class ChatSession:
 
 
 def main():
-    session = ChatSession()
+    parser = argparse.ArgumentParser(description="Run a chat session with ChatGPT.")
+    parser.add_argument(
+        "assistant",
+        type=str,
+        default="dev",
+        nargs="?",
+        choices=["dev", "general"],
+        help="The type of assistant to use. `dev` (default) is a software development assistant, `general` is a generally helpful assistant.",
+    )
+    args = parser.parse_args()
+    session = ChatSession(args.assistant)
     session.loop()
 
 
