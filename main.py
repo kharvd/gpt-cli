@@ -1,6 +1,5 @@
 import openai
 import os
-import sys
 from blessings import Terminal
 from prompt_toolkit import PromptSession
 
