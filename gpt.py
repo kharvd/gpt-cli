@@ -18,10 +18,13 @@ def init_messages():
 
 
 TERMINAL_WELCOME = """
-Hi! I'm here to help. Type `q` or Ctrl-D to exit, `r` or Ctrl-C to reset
+Hi! I'm here to help. Type `q` or Ctrl-D to exit, `c` or Ctrl-C to clear
 the conversation. To enter multi-line mode, enter a backslash `\` followed
 by a new line. Exit the multi-line mode by pressing ESC and then Enter.
 """
+
+CLEAR_SHORTCUT = "c"
+QUIT_SHORTCUT = "q"
 
 term = Terminal()
 
@@ -43,9 +46,9 @@ def next_input(session):
     try:
         line = session.prompt("> ", vi_mode=True, multiline=False)
     except EOFError:
-        return "q"
+        return QUIT_SHORTCUT
     except KeyboardInterrupt:
-        return "r"
+        return CLEAR_SHORTCUT
 
     if line != "\\":
         return line
@@ -82,10 +85,10 @@ def main():
         while (next_user_input := next_input(session)) == "":
             pass
 
-        if next_user_input in ("q", "quit"):
+        if next_user_input in (QUIT_SHORTCUT, "quit"):
             break
 
-        if next_user_input in ("r", "reset"):
+        if next_user_input in (CLEAR_SHORTCUT, "clear"):
             current_messages = init_messages()
             print(term.bold("Cleared the conversation."))
             continue
