@@ -56,6 +56,33 @@ class ChatSession:
         self.term = Terminal()
         self.prompt_session = PromptSession()
 
+    def clear(self):
+        self.messages = init_messages(self.assistant_type)
+        print(self.term.bold("Cleared the conversation."))
+
+    def rerun(self):
+        if len(self.messages) == len(init_messages(self.assistant_type)):
+            print(self.term.bold("Nothing to re-run."))
+            return
+
+        self.messages = self.messages[:-1]
+        print(self.term.bold("Re-generating the last message."))
+        self.respond()
+
+    def respond(self):
+        next_response = []
+        try:
+            for response in complete_chat(self.messages):
+                next_response.append(response)
+                print(self.term.green(response), end="", flush=True)
+        except KeyboardInterrupt:
+            # If the user interrupts the chat completion, we'll just return what we have so far
+            pass
+
+        print("\n")
+        next_response = {"role": "assistant", "content": "".join(next_response)}
+        self.messages.append(next_response)
+
     def prompt(self, multiline=False):
         bindings = KeyBindings()
 
@@ -91,15 +118,6 @@ class ChatSession:
         except KeyboardInterrupt:
             return ""
 
-    def clear(self):
-        self.messages = init_messages(self.assistant_type)
-        print(self.term.bold("Cleared the conversation."))
-
-    def rerun(self):
-        self.messages = self.messages[:-1]
-        print(self.term.bold("Re-generating the last message."))
-        self.respond()
-
     def request_input(self):
         line = self.prompt()
 
@@ -107,20 +125,6 @@ class ChatSession:
             return line
 
         return self.prompt(multiline=True)
-
-    def respond(self):
-        next_response = []
-        try:
-            for response in complete_chat(self.messages):
-                next_response.append(response)
-                print(self.term.green(response), end="", flush=True)
-        except KeyboardInterrupt:
-            # If the user interrupts the chat completion, we'll just return what we have so far
-            pass
-
-        print("\n")
-        next_response = {"role": "assistant", "content": "".join(next_response)}
-        self.messages.append(next_response)
 
     def loop(self):
         print(self.term.bold(TERMINAL_WELCOME))
