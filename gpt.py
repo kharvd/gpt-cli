@@ -2,6 +2,7 @@ import openai
 import os
 from blessings import Terminal
 from prompt_toolkit import PromptSession
+from prompt_toolkit.key_binding import KeyBindings
 
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
@@ -25,8 +26,35 @@ by a new line. Exit the multi-line mode by pressing ESC and then Enter.
 
 CLEAR_SHORTCUT = "c"
 QUIT_SHORTCUT = "q"
+RERUN_SHORTCUT = "r"
 
 term = Terminal()
+
+bindings = KeyBindings()
+
+
+@bindings.add("c-c")
+def _(event):
+    if len(event.current_buffer.text) > 0:
+        event.current_buffer.reset()
+    else:
+        event.app.exit(exception=KeyboardInterrupt, style="class:aborting")
+
+
+class RerunPromptException(Exception):
+    pass
+
+
+@bindings.add("c-r")
+def _(event):
+    if len(event.current_buffer.text) == 0:
+        event.app.exit(exception=RerunPromptException, style="class:aborting")
+
+
+# @bindings.add('c-x')
+# def _(event):
+#     " Exit when `c-x` is pressed. "
+#     event.app.exit()
 
 
 def complete_chat(messages):
@@ -43,18 +71,29 @@ def complete_chat(messages):
 
 def next_input(session):
     line = None
+
     try:
-        line = session.prompt("> ", vi_mode=True, multiline=False)
+        line = session.prompt(
+            "> ",
+            vi_mode=True,
+            multiline=False,
+            enable_open_in_editor=True,
+            key_bindings=bindings,
+        )
     except EOFError:
         return QUIT_SHORTCUT
     except KeyboardInterrupt:
         return CLEAR_SHORTCUT
+    except RerunPromptException:
+        return RERUN_SHORTCUT
 
     if line != "\\":
         return line
 
     try:
-        return session.prompt("multiline> ", multiline=True, vi_mode=True)
+        return session.prompt(
+            "multiline> ", multiline=True, vi_mode=True, enable_open_in_editor=True
+        )
     except (EOFError, KeyboardInterrupt):
         return next_input(session)
 
@@ -91,6 +130,13 @@ def main():
         if next_user_input in (CLEAR_SHORTCUT, "clear"):
             current_messages = init_messages()
             print(term.bold("Cleared the conversation."))
+            continue
+
+        if next_user_input in (RERUN_SHORTCUT, "rerun"):
+            current_messages = current_messages[:-1]
+            print(term.bold("Re-generating the last message."))
+            next_response = respond(current_messages)
+            current_messages.append(next_response)
             continue
 
         current_messages.append({"role": "user", "content": next_user_input})
