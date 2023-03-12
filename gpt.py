@@ -58,7 +58,7 @@ def respond(messages):
     next_response = []
     for response in complete_chat(messages):
         next_response.append(response)
-        print(term.green(response), end="")
+        print(term.green(response), end="", flush=True)
     print("\n")
 
     next_response = {"role": "assistant", "content": "".join(next_response)}
