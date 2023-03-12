@@ -57,12 +57,17 @@ def init_messages():
 
 def respond(messages):
     next_response = []
-    for response in complete_chat(messages):
-        next_response.append(response)
-        print(term.green(response), end="", flush=True)
-    print("\n")
+    try:
+        for response in complete_chat(messages):
+            next_response.append(response)
+            print(term.green(response), end="", flush=True)
+    except KeyboardInterrupt:
+        # If the user interrupts the chat completion, we'll just return what we have so far
+        pass
 
+    print("\n")
     next_response = {"role": "assistant", "content": "".join(next_response)}
+
     return next_response
 
 
