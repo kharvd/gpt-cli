@@ -1,15 +1,21 @@
 import openai
 import os
 import sys
-import colorama
+from blessings import Terminal
+from prompt_toolkit import PromptSession
 
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
-SYSTEM_PROMPT = """
-You are a helpful assistant who is an expert in software development. You are helping a user who is a software developer.
+SYSTEM_PROMPT = """You are a helpful assistant who is an expert in software development. You are helping a user who is a software developer.
 Your responses are concise and to the point. You can use natural language to ask questions and give answers.
-You include code snippets when appropriate. Code snippets are formatted using Markdown.
+You include code snippets when appropriate. Code snippets are formatted using Markdown."""
+
+TERMINAL_WELCOME = """Welcome to the chatbot. Ask a question about software development.
+Type 'q' to exit, 'r' to reset. To enter multi-line mode, enter a backslash followed by a new line.
+Exit multi-line mode by pressing ESC and then enter.
 """
+
+term = Terminal()
 
 
 def complete_chat(messages):
@@ -24,26 +30,23 @@ def complete_chat(messages):
             yield next_choice["delta"]["content"]
 
 
-def next_input():
-    print("> ", end="", flush=True)
-    line = sys.stdin.readline()
-    if line == "":
+def prompt_continuation(width, line_number, is_soft_wrap):
+    return ">" * width
+
+
+def next_input(session):
+    line = None
+    try:
+        line = session.prompt("> ", vi_mode=True, multiline=False)
+    except EOFError:
         return "q"
+    except KeyboardInterrupt:
+        return "r"
 
-    line = line.strip()
-
-    if line != "'":
+    if line != "\\":
         return line
 
-    lines = []
-    while True:
-        line = sys.stdin.readline()
-        if line == "'\n":
-            break
-        lines.append(line)
-    result = "".join(lines)
-
-    return result
+    return session.prompt("multiline> ", multiline=True, vi_mode=True)
 
 
 def init_messages():
@@ -54,38 +57,31 @@ def init_messages():
 
 def respond(messages):
     next_response = []
-    print(colorama.Fore.GREEN, end="")
     for response in complete_chat(messages):
         next_response.append(response)
-        print(response, end="")
+        print(term.green(response), end="")
     print("\n")
-    print(colorama.Fore.RESET, end="")
 
     next_response = {"role": "assistant", "content": "".join(next_response)}
     return next_response
 
 
 def main():
+    session = PromptSession()
     current_messages = init_messages()
 
-    print(colorama.Style.BRIGHT, end="")
-    print("Welcome to the chatbot. Ask a question about software development.")
-    print(
-        "Type 'q' to exit, 'r' to reset. Input a single quote to enter multi-line mode."
-    )
-    print("Exit multi-line mode by entering a single quote on a line by itself.")
-    print(colorama.Style.RESET_ALL)
+    print(term.bold(TERMINAL_WELCOME))
 
     while True:
-        while (next_user_input := next_input()) == "":
+        while (next_user_input := next_input(session)) == "":
             pass
 
-        if next_user_input == "q":
+        if next_user_input in ("q", "quit"):
             break
 
-        if next_user_input == "r":
+        if next_user_input in ("r", "reset"):
             current_messages = init_messages()
-            print(colorama.Style.BRIGHT + "Resetting" + colorama.Style.RESET_ALL)
+            print(term.bold("Cleared the conversation."))
             continue
 
         current_messages.append({"role": "user", "content": next_user_input})
