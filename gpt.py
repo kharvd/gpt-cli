@@ -30,10 +30,6 @@ def complete_chat(messages):
             yield next_choice["delta"]["content"]
 
 
-def prompt_continuation(width, line_number, is_soft_wrap):
-    return ">" * width
-
-
 def next_input(session):
     line = None
     try:
