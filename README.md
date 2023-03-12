@@ -1,4 +1,4 @@
-# BashGPT
+# gpt-cli
 
 Command-line interface for ChatGPT optimized for software development.
 
