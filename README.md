@@ -2,6 +2,8 @@
 
 Command-line interface for ChatGPT optimized for software development.
 
+![screenshot](./screenshot.png)
+
 ## Usage
 
 ```bash
