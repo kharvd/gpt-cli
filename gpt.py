@@ -6,12 +6,13 @@ from prompt_toolkit import PromptSession
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
 SYSTEM_PROMPT = """You are a helpful assistant who is an expert in software development. You are helping a user who is a software developer.
-Your responses are concise and to the point. You can use natural language to ask questions and give answers.
-You include code snippets when appropriate. Code snippets are formatted using Markdown."""
+Your responses are concise and to the point. You include code snippets when appropriate. Code snippets are formatted using Markdown.
+If the user asks a question about something other than software development, you are happy to help with that too."""
 
-TERMINAL_WELCOME = """Welcome to the chatbot. Ask a question about software development.
-Type 'q' to exit, 'r' to reset. To enter multi-line mode, enter a backslash followed by a new line.
-Exit multi-line mode by pressing ESC and then enter.
+TERMINAL_WELCOME = """
+Hi! I'm here to help. Type `q` or Ctrl-D to exit, `r` or Ctrl-C to reset
+the conversation. To enter multi-line mode, enter a backslash `\` followed
+by a new line. Exit the multi-line mode by pressing ESC and then Enter.
 """
 
 term = Terminal()
@@ -45,7 +46,10 @@ def next_input(session):
     if line != "\\":
         return line
 
-    return session.prompt("multiline> ", multiline=True, vi_mode=True)
+    try:
+        return session.prompt("multiline> ", multiline=True, vi_mode=True)
+    except (EOFError, KeyboardInterrupt):
+        return next_input(session)
 
 
 def init_messages():
