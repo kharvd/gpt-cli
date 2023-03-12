@@ -39,7 +39,7 @@ COMMAND_RERUN = ("rerun", "r")
 
 def complete_chat(messages):
     response_iter = openai.ChatCompletion.create(
-        model="gpt-3.5-turbo", messages=messages, temperature=0.5, stream=True
+        model="gpt-3.5-turbo", messages=messages, temperature=0.7, stream=True
     )
 
     # Now iterate over the response iterator to yield the next response
