@@ -12,5 +12,5 @@ Make sure to set the `OPENAI_API_KEY` environment variable to your OpenAI API ke
 $ ./gpt.py
 ```
 
-Type `q` to exit, `r` to reset the conversation.
+Type `q` or Ctrl-D to exit, `r` or Ctrl-C to reset the conversation.
 To enter multi-line mode, enter a backslash `\` followed by a new line. Exit the multi-line mode by pressing ESC and then Enter.
