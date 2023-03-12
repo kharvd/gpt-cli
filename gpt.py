@@ -9,6 +9,14 @@ SYSTEM_PROMPT = """You are a helpful assistant who is an expert in software deve
 
 INIT_USER_PROMPT = """Your responses must be short and concise. Do not include explanations unless asked."""
 
+
+def init_messages():
+    return [
+        {"role": "system", "content": SYSTEM_PROMPT},
+        {"role": "user", "content": INIT_USER_PROMPT},
+    ]
+
+
 TERMINAL_WELCOME = """
 Hi! I'm here to help. Type `q` or Ctrl-D to exit, `r` or Ctrl-C to reset
 the conversation. To enter multi-line mode, enter a backslash `\` followed
@@ -46,13 +54,6 @@ def next_input(session):
         return session.prompt("multiline> ", multiline=True, vi_mode=True)
     except (EOFError, KeyboardInterrupt):
         return next_input(session)
-
-
-def init_messages():
-    return [
-        {"role": "system", "content": SYSTEM_PROMPT},
-        {"role": "user", "content": INIT_USER_PROMPT},
-    ]
 
 
 def respond(messages):
