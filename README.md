@@ -6,6 +6,8 @@ Command-line interface for ChatGPT optimized for software development.
 
 ## Usage
 
+Make sure to set the `OPENAI_API_KEY` environment variable to your OpenAI API key.
+
 ```bash
 $ ./gpt.py
 ```
