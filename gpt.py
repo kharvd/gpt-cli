@@ -5,9 +5,9 @@ from prompt_toolkit import PromptSession
 
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
-SYSTEM_PROMPT = """You are a helpful assistant who is an expert in software development. You are helping a user who is a software developer.
-Your responses are concise and to the point. You include code snippets when appropriate. Code snippets are formatted using Markdown.
-If the user asks a question about something other than software development, you are happy to help with that too."""
+SYSTEM_PROMPT = """You are a helpful assistant who is an expert in software development. You are helping a user who is a software developer. Your responses are short and concise. You include code snippets when appropriate. Code snippets are formatted using Markdown. If the user asks a question about something other than software development, you are happy to help with that too."""
+
+INIT_USER_PROMPT = """Your responses must be short and concise. Do not include explanations unless asked."""
 
 TERMINAL_WELCOME = """
 Hi! I'm here to help. Type `q` or Ctrl-D to exit, `r` or Ctrl-C to reset
@@ -51,6 +51,7 @@ def next_input(session):
 def init_messages():
     return [
         {"role": "system", "content": SYSTEM_PROMPT},
+        {"role": "user", "content": INIT_USER_PROMPT},
     ]
 
 
