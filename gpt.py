@@ -276,11 +276,12 @@ def main():
     config = read_yaml_config(config_path) if os.path.isfile(config_path) else {}
     args = parse_args(config)
 
-    logging.basicConfig(
-        filename=args.log_file,
-        level=args.log_level,
-        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-    )
+    if args.log_file is not None:
+        logging.basicConfig(
+            filename=args.log_file,
+            level=args.log_level,
+            format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+        )
 
     assistant = init_assistant(args, config.get("assistants", {}))
     logging.info("Starting a new chat session. Assistant config: %s", assistant.config)
