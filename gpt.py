@@ -49,13 +49,13 @@ class Assistant:
     def init_messages(self):
         return self.messages[:]
 
-    def complete_chat(self, messages):
+    def complete_chat(self, messages, override_params={}):
         response_iter = openai.ChatCompletion.create(
-            model=self.model,
             messages=messages,
-            temperature=self.temperature,
-            top_p=self.top_p,
             stream=True,
+            model=override_params.get("model", self.model),
+            temperature=float(override_params.get("temperature", self.temperature)),
+            top_p=float(override_params.get("top_p", self.top_p)),
         )
 
         # Now iterate over the response iterator to yield the next response
@@ -101,10 +101,12 @@ class ChatSession:
         logging.info("Re-generating the last message.")
         self.respond()
 
-    def respond(self):
+    def respond(self, args):
         next_response = []
         try:
-            for response in self.assistant.complete_chat(self.messages):
+            for response in self.assistant.complete_chat(
+                self.messages, override_params=args
+            ):
                 next_response.append(response)
                 print(self.term.green(response), end="", flush=True)
         except KeyboardInterrupt:
@@ -159,6 +161,15 @@ class ChatSession:
 
         return self.prompt(multiline=True)
 
+    def parse_input(self, input):
+        args = {}
+        if "--" in input:
+            input, *params = input.split(" --")
+            for param in params:
+                key, value = param.split(" ")
+                args[key.strip()] = value.strip()
+        return input.strip(), args
+
     def loop(self):
         print(self.term.bold(TERMINAL_WELCOME))
 
@@ -178,10 +189,12 @@ class ChatSession:
                 self.rerun()
                 continue
 
-            user_message = {"role": "user", "content": next_user_input}
+            user_input, args = self.parse_input(next_user_input)
+
+            user_message = {"role": "user", "content": user_input}
             self.messages.append(user_message)
-            logging.info(user_message)
-            self.respond()
+            logging.info(f"message: {user_message}, args: {args}")
+            self.respond(args)
 
 
 def read_yaml_config(file_path):

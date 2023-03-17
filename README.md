@@ -32,6 +32,13 @@ optional arguments:
 Type `q` or Ctrl-D to exit, `c` or Ctrl-C to clear the conversation, `r` or Ctrl-R to re-generate the last response.
 To enter multi-line mode, enter a backslash `\` followed by a new line. Exit the multi-line mode by pressing ESC and then Enter.
 
+You can override the model parameters using `--model`, `--temperature` and `--top_p` arguments at the end of your prompt. For example:
+
+```
+> What is the meaning of life? --model gpt-4 --temperature 2.0
+The meaning of life is subjective and can be different for diverse human beings and unique-phil ethics.org/cultuties-/ it that reson/bdstals89im3_jrf334;mvs-bread99ef=g22me
+```
+
 By default, the assistant is instructed to be an expert in software development and provide short responses. You can use a more general assistant by running it with `general` argument:
 
 ```bash
