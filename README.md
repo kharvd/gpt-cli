@@ -6,10 +6,10 @@ Command-line interface for ChatGPT optimized for software development.
 
 ## Usage
 
-Make sure to set the `OPENAI_API_KEY` environment variable to your OpenAI API key or in the `~/.gptrc` file (see below).
+Make sure to set the `OPENAI_API_KEY` environment variable to your OpenAI API key (or put it in the `~/.gptrc` file as described below).
 
 ```
-usage: gpt.py [-h] [--model MODEL] [--temperature TEMPERATURE] [{dev,general,pirate}]
+usage: gpt.py [-h] [--model MODEL] [--temperature TEMPERATURE] [--top_p TOP_P] [{dev,general,pirate}]
 
 Run a chat session with ChatGPT.
 
@@ -25,6 +25,8 @@ optional arguments:
   --temperature TEMPERATURE
                         The temperature to use for the chat session. Overrides the default temperature
                         defined for the assistant.
+  --top_p TOP_P         The top_p to use for the chat session. Overrides the default top_p defined for
+                        the assistant.
 ```
 
 Type `q` or Ctrl-D to exit, `c` or Ctrl-C to clear the conversation, `r` or Ctrl-R to re-generate the last response.
@@ -47,6 +49,7 @@ assistants:
   <assistant_name>:
     model: <model_name>
     temperature: <temperature>
+    top_p: <top_p>
     messages:
       - { role: <role>, content: <message> }
       - ...
@@ -54,12 +57,13 @@ assistants:
     ...
 ```
 
-You can specify the default assistant to use by setting the `default_assistant` field. If you don't specify it, the default assistant is `dev`. You can also specify the model and temperature to use for the assistant. If you don't specify them, the default model and temperature are used. The temperature and the model can be overridden by the command-line arguments.
+You can specify the default assistant to use by setting the `default_assistant` field. If you don't specify it, the default assistant is `dev`. You can also specify the model, temperature and top_p to use for the assistant. If you don't specify them, the default values are used. These parameters can also be overridden by the command-line arguments.
 
 Example:
 
 ```yaml
 default_assistant: general
+api_key: <openai_api_key>
 assistants:
   pirate:
     model: gpt-4

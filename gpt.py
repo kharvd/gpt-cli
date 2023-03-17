@@ -15,6 +15,7 @@ SYSTEM_PROMPT_GENERAL = "You are a helpful assistant."
 ASSISTANT_DEFAULTS = {
     "model": "gpt-3.5-turbo",
     "temperature": 0.7,
+    "top_p": 1,
 }
 
 DEFAULT_ASSISTANTS = {
@@ -41,6 +42,7 @@ class Assistant:
         """
         self.model = kwargs.get("model", ASSISTANT_DEFAULTS["model"])
         self.temperature = kwargs.get("temperature", ASSISTANT_DEFAULTS["temperature"])
+        self.top_p = kwargs.get("top_p", ASSISTANT_DEFAULTS["top_p"])
         self.messages = kwargs["messages"]
         self.config = kwargs
 
@@ -52,6 +54,7 @@ class Assistant:
             model=self.model,
             messages=messages,
             temperature=self.temperature,
+            top_p=self.top_p,
             stream=True,
         )
 
@@ -205,6 +208,8 @@ def init_assistant(args, custom_assistants):
         assistant_config["temperature"] = args.temperature
     if args.model is not None:
         assistant_config["model"] = args.model
+    if args.top_p is not None:
+        assistant_config["top_p"] = args.top_p
     return Assistant(**assistant_config)
 
 
@@ -229,6 +234,12 @@ def parse_args(config):
         type=float,
         default=None,
         help="The temperature to use for the chat session. Overrides the default temperature defined for the assistant.",
+    )
+    parser.add_argument(
+        "--top_p",
+        type=float,
+        default=None,
+        help="The top_p to use for the chat session. Overrides the default top_p defined for the assistant.",
     )
     parser.add_argument(
         "--log_file",
