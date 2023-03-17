@@ -1,7 +1,8 @@
 import openai
 import os
 import argparse
-import sys
+import yaml
+import logging
 from blessings import Terminal
 from prompt_toolkit import PromptSession
 from prompt_toolkit.key_binding import KeyBindings
@@ -37,9 +38,9 @@ COMMAND_QUIT = ("quit", "q")
 COMMAND_RERUN = ("rerun", "r")
 
 
-def complete_chat(messages):
+def complete_chat(messages, model):
     response_iter = openai.ChatCompletion.create(
-        model="gpt-3.5-turbo", messages=messages, temperature=0.7, stream=True
+        model=model, messages=messages, temperature=0.7, stream=True
     )
 
     # Now iterate over the response iterator to yield the next response
@@ -50,8 +51,9 @@ def complete_chat(messages):
 
 
 class ChatSession:
-    def __init__(self, assistant_type):
+    def __init__(self, assistant_type, model):
         self.assistant_type = assistant_type
+        self.model = model
         self.messages = init_messages(assistant_type)
         self.term = Terminal()
         self.prompt_session = PromptSession()
@@ -72,7 +74,7 @@ class ChatSession:
     def respond(self):
         next_response = []
         try:
-            for response in complete_chat(self.messages):
+            for response in complete_chat(self.messages, self.model):
                 next_response.append(response)
                 print(self.term.green(response), end="", flush=True)
         except KeyboardInterrupt:
@@ -148,18 +150,54 @@ class ChatSession:
             self.respond()
 
 
+def read_yaml_config(file_path):
+    with open(file_path, "r") as file:
+        return yaml.safe_load(file)
+
+
 def main():
+    config_path = os.path.expanduser("~/.gptrc")
+    config = read_yaml_config(config_path) if os.path.isfile(config_path) else {}
+
     parser = argparse.ArgumentParser(description="Run a chat session with ChatGPT.")
     parser.add_argument(
         "assistant",
         type=str,
-        default="dev",
+        default=config.get("assistant", "dev"),
         nargs="?",
         choices=["dev", "general"],
         help="The type of assistant to use. `dev` (default) is a software development assistant, `general` is a generally helpful assistant.",
     )
+    parser.add_argument(
+        "--model",
+        type=str,
+        default=config.get("model", "gpt-3.5-turbo"),
+        help="The model to use for the chat session.",
+        choices=["gpt-3.5-turbo", "gpt-4"],
+    )
+    parser.add_argument(
+        "--log_file",
+        type=str,
+        default=config.get("log_file", None),
+        help="The file to log the chat session to.",
+    )
+    parser.add_argument(
+        "--log_level",
+        type=str,
+        default=config.get("log_level", "INFO"),
+        choices=["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"],
+        help="The log level to use.",
+    )
+
     args = parser.parse_args()
-    session = ChatSession(args.assistant)
+
+    logging.basicConfig(
+        filename=args.log_file,
+        level=args.log_level,
+        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    )
+
+    session = ChatSession(assistant_type=args.assistant, model=args.model)
     session.loop()
 
 
