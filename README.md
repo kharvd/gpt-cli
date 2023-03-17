@@ -1,6 +1,6 @@
 # gpt-cli
 
-Command-line interface for ChatGPT optimized for software development.
+Command-line interface for ChatGPT.
 
 ![screenshot](./screenshot.png)
 
@@ -14,8 +14,8 @@ usage: gpt.py [-h] [--model MODEL] [--temperature TEMPERATURE] [--top_p TOP_P] [
 Run a chat session with ChatGPT.
 
 positional arguments:
-  {dev,general,pirate}  The name of assistant to use. `dev` (default) is a software development
-                        assistant, `general` is a generally helpful assistant. You can specify your own
+  {dev,general}         The name of assistant to use. `general` (default) is a generally helpful assistant,
+                        `dev` is a software development assistant. You can specify your own
                         assistants in the config file ~/.gptrc. See the README for more information.
 
 optional arguments:
@@ -39,10 +39,10 @@ You can override the model parameters using `--model`, `--temperature` and `--to
 The meaning of life is subjective and can be different for diverse human beings and unique-phil ethics.org/cultuties-/ it that reson/bdstals89im3_jrf334;mvs-bread99ef=g22me
 ```
 
-By default, the assistant is instructed to be an expert in software development and provide short responses. You can use a more general assistant by running it with `general` argument:
+The `dev` assistant is instructed to be an expert in software development and provide short responses.
 
 ```bash
-$ ./gpt.py general
+$ ./gpt.py dev
 ```
 
 ## Configuration
@@ -64,12 +64,12 @@ assistants:
     ...
 ```
 
-You can specify the default assistant to use by setting the `default_assistant` field. If you don't specify it, the default assistant is `dev`. You can also specify the model, temperature and top_p to use for the assistant. If you don't specify them, the default values are used. These parameters can also be overridden by the command-line arguments.
+You can specify the default assistant to use by setting the `default_assistant` field. If you don't specify it, the default assistant is `general`. You can also specify the model, temperature and top_p to use for the assistant. If you don't specify them, the default values are used. These parameters can also be overridden by the command-line arguments.
 
 Example:
 
 ```yaml
-default_assistant: general
+default_assistant: dev
 api_key: <openai_api_key>
 assistants:
   pirate:

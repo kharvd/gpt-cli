@@ -231,10 +231,10 @@ def parse_args(config):
     parser.add_argument(
         "assistant_name",
         type=str,
-        default=config.get("default_assistant", "dev"),
+        default=config.get("default_assistant", "general"),
         nargs="?",
         choices=["dev", "general", *config.get("assistants", {}).keys()],
-        help="The name of assistant to use. `dev` (default) is a software development assistant, `general` is a generally helpful assistant. You can specify your own assistants in the config file ~/.gptrc. See the README for more information.",
+        help="The name of assistant to use. `general` (default) is a generally helpful assistant, `dev` is a software development assistant with shorter responses. You can specify your own assistants in the config file ~/.gptrc. See the README for more information.",
     )
     parser.add_argument(
         "--model",
