@@ -2,6 +2,7 @@ import openai
 import os
 import argparse
 import yaml
+import sys
 import logging
 from blessings import Terminal
 from prompt_toolkit import PromptSession
@@ -69,6 +70,7 @@ class ChatSession:
 
         self.messages = self.messages[:-1]
         print(self.term.bold("Re-generating the last message."))
+        logging.info("Re-generating the last message.")
         self.respond()
 
     def respond(self):
@@ -83,6 +85,7 @@ class ChatSession:
 
         print("\n")
         next_response = {"role": "assistant", "content": "".join(next_response)}
+        logging.info(next_response)
         self.messages.append(next_response)
 
     def prompt(self, multiline=False):
@@ -140,19 +143,34 @@ class ChatSession:
 
             if next_user_input in COMMAND_CLEAR:
                 self.clear()
+                logging.info("Cleared the conversation.")
                 continue
 
             if next_user_input in COMMAND_RERUN:
                 self.rerun()
                 continue
 
-            self.messages.append({"role": "user", "content": next_user_input})
+            user_message = {"role": "user", "content": next_user_input}
+            self.messages.append(user_message)
+            logging.info(user_message)
             self.respond()
 
 
 def read_yaml_config(file_path):
     with open(file_path, "r") as file:
         return yaml.safe_load(file)
+
+
+default_exception_handler = sys.excepthook
+
+
+def exception_handler(type, value, traceback):
+    logging.exception("Uncaught exception", exc_info=(type, value, traceback))
+    print("An uncaught exception occurred. Please report this issue on GitHub.")
+    default_exception_handler(type, value, traceback)
+
+
+sys.excepthook = exception_handler
 
 
 def main():
@@ -173,7 +191,6 @@ def main():
         type=str,
         default=config.get("model", "gpt-3.5-turbo"),
         help="The model to use for the chat session.",
-        choices=["gpt-3.5-turbo", "gpt-4"],
     )
     parser.add_argument(
         "--log_file",
@@ -196,6 +213,8 @@ def main():
         level=args.log_level,
         format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
     )
+
+    logging.info("Starting a new chat session. Config = %s", args)
 
     session = ChatSession(assistant_type=args.assistant, model=args.model)
     session.loop()
