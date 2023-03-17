@@ -8,8 +8,6 @@ from blessings import Terminal
 from prompt_toolkit import PromptSession
 from prompt_toolkit.key_binding import KeyBindings
 
-openai.api_key = os.getenv("OPENAI_API_KEY")
-
 SYSTEM_PROMPT_DEV = f"You are a helpful assistant who is an expert in software development. You are helping a user who is a software developer. Your responses are short and concise. You include code snippets when appropriate. Code snippets are formatted using Markdown. User's `uname`: {os.uname()}"
 INIT_USER_PROMPT_DEV = "Your responses must be short and concise. Do not include explanations unless asked."
 SYSTEM_PROMPT_GENERAL = "You are a helpful assistant."
@@ -215,10 +213,10 @@ def parse_args(config):
     parser.add_argument(
         "assistant_name",
         type=str,
-        default=config.get("assistant_name", "dev"),
+        default=config.get("default_assistant", "dev"),
         nargs="?",
         choices=["dev", "general", *config.get("assistants", {}).keys()],
-        help="The name of assistant to use. `dev` (default) is a software development assistant, `general` is a generally helpful assistant.",
+        help="The name of assistant to use. `dev` (default) is a software development assistant, `general` is a generally helpful assistant. You can specify your own assistants in the config file ~/.gptrc. See the README for more information.",
     )
     parser.add_argument(
         "--model",
@@ -236,14 +234,14 @@ def parse_args(config):
         "--log_file",
         type=str,
         default=config.get("log_file", None),
-        help="The file to log the chat session to.",
+        help=argparse.SUPPRESS,
     )
     parser.add_argument(
         "--log_level",
         type=str,
         default=config.get("log_level", "INFO"),
         choices=["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"],
-        help="The log level to use.",
+        help=argparse.SUPPRESS,
     )
 
     return parser.parse_args()
@@ -263,6 +261,7 @@ def main():
     assistant = init_assistant(args, config.get("assistants", {}))
     logging.info("Starting a new chat session. Assistant config: %s", assistant.config)
 
+    openai.api_key = config.get("api_key", os.environ.get("OPENAI_API_KEY"))
     session = ChatSession(assistant=assistant)
     session.loop()
 
