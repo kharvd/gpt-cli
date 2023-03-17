@@ -11,20 +11,60 @@ from prompt_toolkit.key_binding import KeyBindings
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
 SYSTEM_PROMPT_DEV = f"You are a helpful assistant who is an expert in software development. You are helping a user who is a software developer. Your responses are short and concise. You include code snippets when appropriate. Code snippets are formatted using Markdown. User's `uname`: {os.uname()}"
-
 INIT_USER_PROMPT_DEV = "Your responses must be short and concise. Do not include explanations unless asked."
-
 SYSTEM_PROMPT_GENERAL = "You are a helpful assistant."
 
+ASSISTANT_DEFAULTS = {
+    "model": "gpt-3.5-turbo",
+    "temperature": 0.7,
+}
 
-def init_messages(assistant_type):
-    if assistant_type == "dev":
-        return [
+DEFAULT_ASSISTANTS = {
+    "dev": {
+        "messages": [
             {"role": "system", "content": SYSTEM_PROMPT_DEV},
             {"role": "user", "content": INIT_USER_PROMPT_DEV},
-        ]
-    elif assistant_type == "general":
-        return [{"role": "system", "content": SYSTEM_PROMPT_GENERAL}]
+        ],
+    },
+    "general": {
+        "messages": [{"role": "system", "content": SYSTEM_PROMPT_GENERAL}],
+    },
+}
+
+
+class Assistant:
+    def __init__(self, **kwargs):
+        """
+        Initialize an assistant with the given model and temperature.
+
+        :param model: The model to use for the assistant. Defaults to gpt-3.5-turbo.
+        :param temperature: The temperature to use for the assistant. Defaults to 0.7.
+        :param messages: The initial messages to use for the assistant.
+        """
+        self.model = kwargs.get("model", ASSISTANT_DEFAULTS["model"])
+        self.temperature = kwargs.get("temperature", ASSISTANT_DEFAULTS["temperature"])
+        self.messages = kwargs["messages"]
+        self.config = kwargs
+
+    def init_messages(self):
+        return self.messages[:]
+
+    def complete_chat(self, messages):
+        response_iter = openai.ChatCompletion.create(
+            model=self.model,
+            messages=messages,
+            temperature=self.temperature,
+            stream=True,
+        )
+
+        # Now iterate over the response iterator to yield the next response
+        for response in response_iter:
+            next_choice = response["choices"][0]
+            if (
+                next_choice["finish_reason"] is None
+                and "content" in next_choice["delta"]
+            ):
+                yield next_choice["delta"]["content"]
 
 
 TERMINAL_WELCOME = """
@@ -39,32 +79,19 @@ COMMAND_QUIT = ("quit", "q")
 COMMAND_RERUN = ("rerun", "r")
 
 
-def complete_chat(messages, model):
-    response_iter = openai.ChatCompletion.create(
-        model=model, messages=messages, temperature=0.7, stream=True
-    )
-
-    # Now iterate over the response iterator to yield the next response
-    for response in response_iter:
-        next_choice = response["choices"][0]
-        if next_choice["finish_reason"] is None and "content" in next_choice["delta"]:
-            yield next_choice["delta"]["content"]
-
-
 class ChatSession:
-    def __init__(self, assistant_type, model):
-        self.assistant_type = assistant_type
-        self.model = model
-        self.messages = init_messages(assistant_type)
+    def __init__(self, assistant):
+        self.assistant = assistant
+        self.messages = assistant.init_messages()
         self.term = Terminal()
         self.prompt_session = PromptSession()
 
     def clear(self):
-        self.messages = init_messages(self.assistant_type)
+        self.messages = self.assistant.init_messages()
         print(self.term.bold("Cleared the conversation."))
 
     def rerun(self):
-        if len(self.messages) == len(init_messages(self.assistant_type)):
+        if len(self.messages) == len(self.assistant.init_messages()):
             print(self.term.bold("Nothing to re-run."))
             return
 
@@ -76,7 +103,7 @@ class ChatSession:
     def respond(self):
         next_response = []
         try:
-            for response in complete_chat(self.messages, self.model):
+            for response in self.assistant.complete_chat(self.messages):
                 next_response.append(response)
                 print(self.term.green(response), end="", flush=True)
         except KeyboardInterrupt:
@@ -173,24 +200,37 @@ def exception_handler(type, value, traceback):
 sys.excepthook = exception_handler
 
 
-def main():
-    config_path = os.path.expanduser("~/.gptrc")
-    config = read_yaml_config(config_path) if os.path.isfile(config_path) else {}
+def init_assistant(args, custom_assistants):
+    all_assistants = {**DEFAULT_ASSISTANTS, **custom_assistants}
+    assistant_config = all_assistants[args.assistant_name]
+    if args.temperature is not None:
+        assistant_config["temperature"] = args.temperature
+    if args.model is not None:
+        assistant_config["model"] = args.model
+    return Assistant(**assistant_config)
 
+
+def parse_args(config):
     parser = argparse.ArgumentParser(description="Run a chat session with ChatGPT.")
     parser.add_argument(
-        "assistant",
+        "assistant_name",
         type=str,
-        default=config.get("assistant", "dev"),
+        default=config.get("assistant_name", "dev"),
         nargs="?",
-        choices=["dev", "general"],
-        help="The type of assistant to use. `dev` (default) is a software development assistant, `general` is a generally helpful assistant.",
+        choices=["dev", "general", *config.get("assistants", {}).keys()],
+        help="The name of assistant to use. `dev` (default) is a software development assistant, `general` is a generally helpful assistant.",
     )
     parser.add_argument(
         "--model",
         type=str,
-        default=config.get("model", "gpt-3.5-turbo"),
-        help="The model to use for the chat session.",
+        default=None,
+        help="The model to use for the chat session. Overrides the default model defined for the assistant.",
+    )
+    parser.add_argument(
+        "--temperature",
+        type=float,
+        default=None,
+        help="The temperature to use for the chat session. Overrides the default temperature defined for the assistant.",
     )
     parser.add_argument(
         "--log_file",
@@ -206,7 +246,13 @@ def main():
         help="The log level to use.",
     )
 
-    args = parser.parse_args()
+    return parser.parse_args()
+
+
+def main():
+    config_path = os.path.expanduser("~/.gptrc")
+    config = read_yaml_config(config_path) if os.path.isfile(config_path) else {}
+    args = parse_args(config)
 
     logging.basicConfig(
         filename=args.log_file,
@@ -214,9 +260,10 @@ def main():
         format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
     )
 
-    logging.info("Starting a new chat session. Config = %s", args)
+    assistant = init_assistant(args, config.get("assistants", {}))
+    logging.info("Starting a new chat session. Assistant config: %s", assistant.config)
 
-    session = ChatSession(assistant_type=args.assistant, model=args.model)
+    session = ChatSession(assistant=assistant)
     session.loop()
 
 
