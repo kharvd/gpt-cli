@@ -84,6 +84,7 @@ class ChatSession:
     def __init__(self, assistant):
         self.assistant = assistant
         self.messages = assistant.init_messages()
+        self.user_prompts = []
         self.term = Terminal()
         self.prompt_session = PromptSession()
 
@@ -92,14 +93,15 @@ class ChatSession:
         print(self.term.bold("Cleared the conversation."))
 
     def rerun(self):
-        if len(self.messages) == len(self.assistant.init_messages()):
+        if len(self.user_prompts) == 0:
             print(self.term.bold("Nothing to re-run."))
             return
 
         self.messages = self.messages[:-1]
         print(self.term.bold("Re-generating the last message."))
         logging.info("Re-generating the last message.")
-        self.respond()
+        _, args = self.user_prompts[-1]
+        self.respond(args)
 
     def respond(self, args):
         next_response = []
@@ -193,6 +195,8 @@ class ChatSession:
 
             user_message = {"role": "user", "content": user_input}
             self.messages.append(user_message)
+            self.user_prompts.append((user_message, args))
+
             logging.info(f"message: {user_message}, args: {args}")
             self.respond(args)
 
