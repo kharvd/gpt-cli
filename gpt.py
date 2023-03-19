@@ -7,7 +7,7 @@ import logging
 from blessings import Terminal
 from prompt_toolkit import PromptSession
 from prompt_toolkit.key_binding import KeyBindings
-from openai.error import OpenAIError
+from openai import OpenAIError, InvalidRequestError
 
 SYSTEM_PROMPT_DEV = f"You are a helpful assistant who is an expert in software development. You are helping a user who is a software developer. Your responses are short and concise. You include code snippets when appropriate. Code snippets are formatted using Markdown. User's `uname`: {os.uname()}"
 INIT_USER_PROMPT_DEV = "Your responses must be short and concise. Do not include explanations unless asked."
@@ -117,6 +117,14 @@ class ChatSession:
         except KeyboardInterrupt:
             # If the user interrupts the chat completion, we'll just return what we have so far
             pass
+        except InvalidRequestError as e:
+            print(
+                self.term.red(
+                    f"Request Error. The last prompt was not saved: {type(e)}: {e}"
+                )
+            )
+            logging.exception(e)
+            return False
         except OpenAIError as e:
             print(
                 self.term.red(
@@ -124,12 +132,13 @@ class ChatSession:
                 )
             )
             logging.exception(e)
-            return
+            return True
 
         print("\n")
         next_response = {"role": "assistant", "content": "".join(next_response)}
         logging.info(next_response)
         self.messages.append(next_response)
+        return True
 
     def prompt(self, multiline=False):
         bindings = KeyBindings()
@@ -205,11 +214,10 @@ class ChatSession:
             user_input, args = self.parse_input(next_user_input)
 
             user_message = {"role": "user", "content": user_input}
-            self.messages.append(user_message)
-            self.user_prompts.append((user_message, args))
-
             logging.info(f"message: {user_message}, args: {args}")
-            self.respond(args)
+            if self.respond(args):
+                self.messages.append(user_message)
+                self.user_prompts.append((user_message, args))
 
 
 def read_yaml_config(file_path):
