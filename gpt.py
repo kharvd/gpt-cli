@@ -1,3 +1,4 @@
+import re
 import openai
 import os
 import argparse
@@ -49,6 +50,9 @@ class Assistant:
 
     def init_messages(self):
         return self.messages[:]
+
+    def supported_overrides(self):
+        return ["model", "temperature", "top_p"]
 
     def complete_chat(self, messages, override_params={}):
         response_iter = openai.ChatCompletion.create(
@@ -183,14 +187,28 @@ class ChatSession:
 
         return self.prompt(multiline=True)
 
+    def _validate_args(self, args):
+        for key in args:
+            if key not in self.assistant.supported_overrides():
+                msg = self.term.red(
+                    f"Invalid argument: {key}. Allowed arguments: {self.assistant.supported_overrides()}"
+                )
+                print(msg)
+                return False
+        return True
+
     def parse_input(self, input):
         args = {}
-        if "--" in input:
-            input, *params = input.split(" --")
-            for param in params:
-                key, value = param.split(" ", 1)
-                args[key.strip()] = value.strip()
-        return input.strip(), args
+        regex = r"--(\w+)(?:\s+|=)([^\s]+)"
+        matches = re.findall(regex, input)
+        if matches:
+            args = dict(matches)
+            if not self._validate_args(args):
+                return None, {}
+
+            input = input.split("--")[0].strip()
+
+        return input, args
 
     def loop(self):
         print(self.term.bold(TERMINAL_WELCOME))
@@ -212,6 +230,11 @@ class ChatSession:
                 continue
 
             user_input, args = self.parse_input(next_user_input)
+            if user_input is None:
+                continue
+
+            if args:
+                print(self.term.bold_yellow(f"Running model with: {args}"))
 
             user_message = {"role": "user", "content": user_input}
             logging.info(f"message: {user_message}, args: {args}")
