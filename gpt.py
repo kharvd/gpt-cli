@@ -215,9 +215,12 @@ class ChatSession:
 
             user_message = {"role": "user", "content": user_input}
             logging.info(f"message: {user_message}, args: {args}")
-            if self.respond(args):
-                self.messages.append(user_message)
-                self.user_prompts.append((user_message, args))
+            self.messages.append(user_message)
+            self.user_prompts.append((user_message, args))
+            if not self.respond(args):
+                # Roll back the last user message
+                self.messages = self.messages[:-1]
+                self.user_prompts = self.user_prompts[:-1]
 
 
 def read_yaml_config(file_path):
