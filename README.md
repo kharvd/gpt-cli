@@ -15,6 +15,32 @@ Command-line interface for ChatGPT.
 - **Multiple Assistants**: Easily switch between different assistants, including general, dev, and custom assistants defined in the config file.
 - **Flexible Configuration**: Define your assistants, model parameters, and API key in a YAML configuration file, allowing for easy customization and management.
 
+## Installation
+
+At present, the simplest way is to clone the repository to your machine and then install the tool as described below.
+
+This install assumes a Linux/OSX machine with python and pip available.
+
+```bash
+git clone https://github.com/kharvd/gpt-cli
+cd gpt-cli
+pip install -r requirements.txt
+```
+
+Add the OpenAI API token to your `.bashrc` file (in the root of your home folder).
+In this example we use nano, you can use any text editor.
+```
+nano ~/.bashrc
+export OPENAI_API_TOKEN=<your_token_here>
+```
+
+Run the tool
+```
+python gpt.py
+```
+
+You can also use a `.gptrc` file for configuration. See the [Configuration](README.md#Configuration) section below.
+
 ## Usage
 
 Make sure to set the `OPENAI_API_KEY` environment variable to your OpenAI API key (or put it in the `~/.gptrc` file as described below).
@@ -59,32 +85,6 @@ The `dev` assistant is instructed to be an expert in software development and pr
 ```bash
 $ ./gpt.py dev
 ```
-
-
-## Instalation
-
-At present, the simplest way is to clone the repository to your machine and then install the tool as described below.
-
-This install assumes a Linux/OSX machine with python and pip available.
-
-```
-git clone https://github.com/kharvd/gpt-cli
-cd gpt-cli
-pip install -r requirements.txt
-```
-
-Add the OpenAI API token to your .bashrc file (on the root of your home folder).
-On this example we use nano, you can use any text editor.
-```
-nano ~/.bashrc
-export OPENAI_API_TOKEN=<your_token_here>
-```
-
-Run the tool
-```
-python gpt.py
-```
-
 
 ## Configuration
 
