@@ -60,6 +60,32 @@ The `dev` assistant is instructed to be an expert in software development and pr
 $ ./gpt.py dev
 ```
 
+
+## Instalation
+
+At present, the simplest way is to clone the repository to your machine and then install the tool as described below.
+
+This install assumes a Linux/OSX machine with python and pip available.
+
+```
+git clone https://github.com/kharvd/gpt-cli
+cd gpt-cli
+pip install -r requirements.txt
+```
+
+Add the OpenAI API token to your .bashrc file (on the root of your home folder).
+On this example we use nano, you can use any text editor.
+```
+nano ~/.bashrc
+export OPENAI_API_TOKEN=<your_token_here>
+```
+
+Run the tool
+```
+python gpt.py
+```
+
+
 ## Configuration
 
 You can configure the assistants in the config file `~/.gptrc`. The file is a YAML file with the following structure:
