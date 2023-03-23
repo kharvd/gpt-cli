@@ -19,7 +19,7 @@ INIT_USER_PROMPT_DEV = "Your responses must be short and concise. Do not include
 SYSTEM_PROMPT_GENERAL = "You are a helpful assistant."
 
 ASSISTANT_DEFAULTS = {
-    "model": "gpt-4",
+    "model": "gpt-3.5-turbo",
     "temperature": 0.7,
     "top_p": 1,
 }
@@ -296,7 +296,9 @@ def init_assistant(args, custom_assistants):
 
 
 def parse_args(config):
-    parser = argparse.ArgumentParser(description="Run a chat session with ChatGPT.")
+    parser = argparse.ArgumentParser(
+        description="Run a chat session with ChatGPT. See https://github.com/kharvd/gpt-cli for more information."
+    )
     parser.add_argument(
         "assistant_name",
         type=str,
