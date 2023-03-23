@@ -10,6 +10,7 @@ from prompt_toolkit import PromptSession
 from prompt_toolkit.key_binding import KeyBindings
 from openai import OpenAIError, InvalidRequestError
 from rich.live import Live
+from rich.panel import Panel
 from rich.console import Console
 from rich.text import Text
 from rich.markdown import Markdown
@@ -231,7 +232,8 @@ class ChatSession:
         return input, args
 
     def loop(self):
-        print(self.term.bold(TERMINAL_WELCOME))
+        console = Console(width=80)
+        console.print(Markdown(TERMINAL_WELCOME))
 
         while True:
             while (next_user_input := self.request_input()) == "":
