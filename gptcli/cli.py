@@ -1,16 +1,20 @@
-from contextlib import contextmanager
 import re
 import logging
 from prompt_toolkit import PromptSession
-from prompt_toolkit.key_binding import KeyBindings, KeyPressEvent
 from openai import OpenAIError, InvalidRequestError
-from rich.live import Live
 from rich.console import Console
-from rich.text import Text
 from rich.markdown import Markdown
-from typing import Any, Dict, Iterator, List, Optional, Tuple
+from typing import Any, Dict, List, Tuple
 
-from .assistant import Assistant, ModelOverrides
+from gptcli.term_utils import (
+    COMMAND_CLEAR,
+    COMMAND_QUIT,
+    COMMAND_RERUN,
+    StreamingMarkdownPrinter,
+    parse_args,
+    prompt,
+)
+from gptcli.assistant import Assistant, ModelOverrides
 
 
 TERMINAL_WELCOME = """
@@ -19,72 +23,6 @@ the conversation, `r` or Ctrl-R to re-generate the last response.
 To enter multi-line mode, enter a backslash `\` followed by a new line.
 Exit the multi-line mode by pressing ESC and then Enter (Meta+Enter).
 """
-
-COMMAND_CLEAR = ("clear", "c")
-COMMAND_QUIT = ("quit", "q")
-COMMAND_RERUN = ("rerun", "r")
-
-
-class StreamingMarkdownPrinter:
-    def __init__(self, console: Console, markdown: bool):
-        self.console = console
-        self.current_text = ""
-        self.markdown = markdown
-        self.live: Optional[Live] = None
-
-    def __enter__(self):
-        self.live = Live(console=self.console, auto_refresh=False)
-        self.live.__enter__()
-        return self
-
-    def print(self, text: str):
-        self.current_text += text
-        if self.markdown:
-            content = Markdown(self.current_text, style="green")
-        else:
-            content = Text(self.current_text, style="green")
-        self.live.update(content)
-        self.live.refresh()
-
-    def __exit__(self, *args):
-        self.live.__exit__(*args)
-        self.console.print()
-
-
-def prompt(session: PromptSession[str], multiline=False):
-    bindings = KeyBindings()
-
-    @bindings.add("c-c")
-    def _(event: KeyPressEvent):
-        if len(event.current_buffer.text) == 0 and not multiline:
-            event.current_buffer.text = COMMAND_CLEAR[0]
-            event.current_buffer.validate_and_handle()
-        else:
-            event.app.exit(exception=KeyboardInterrupt, style="class:aborting")
-
-    @bindings.add("c-d")
-    def _(event: KeyPressEvent):
-        if len(event.current_buffer.text) == 0:
-            if not multiline:
-                event.current_buffer.text = COMMAND_QUIT[0]
-            event.current_buffer.validate_and_handle()
-
-    @bindings.add("c-r")
-    def _(event: KeyPressEvent):
-        if len(event.current_buffer.text) == 0:
-            event.current_buffer.text = COMMAND_RERUN[0]
-            event.current_buffer.validate_and_handle()
-
-    try:
-        return session.prompt(
-            "> " if not multiline else "multiline> ",
-            vi_mode=True,
-            multiline=multiline,
-            enable_open_in_editor=True,
-            key_bindings=bindings,
-        )
-    except KeyboardInterrupt:
-        return ""
 
 
 class ChatSession:
@@ -96,12 +34,13 @@ class ChatSession:
         self.markdown = markdown
         self.console = Console()
 
-    def clear(self):
+    def _clear(self):
         self.messages = self.assistant.init_messages()
         self.user_prompts = []
         self.console.print("[bold]Cleared the conversation.[/bold]")
+        logging.info("Cleared the conversation.")
 
-    def rerun(self):
+    def _rerun(self):
         if len(self.user_prompts) == 0:
             self.console.print("[bold]Nothing to re-run.[/bold]")
             return
@@ -112,9 +51,12 @@ class ChatSession:
         self.console.print("[bold]Re-running the last message.[/bold]")
         logging.info("Re-generating the last message.")
         _, args = self.user_prompts[-1]
-        self.respond(args)
+        self._respond(args)
 
-    def respond(self, args: ModelOverrides):
+    def _respond(self, args: ModelOverrides) -> bool:
+        """
+        Respond to the user's input and return whether the assistant's response was saved.
+        """
         next_response = ""
         try:
             completion_iter = self.assistant.complete_chat(
@@ -146,7 +88,7 @@ class ChatSession:
         self.messages.append(next_response)
         return True
 
-    def request_input(self):
+    def _request_input(self):
         line = prompt(self.prompt_session)
 
         if line != "\\":
@@ -164,38 +106,41 @@ class ChatSession:
                 return False
         return True
 
-    def parse_input(self, input: str) -> Tuple[str, ModelOverrides]:
-        args = {}
-        regex = r"--(\w+)(?:\s+|=)([^\s]+)"
-        matches = re.findall(regex, input)
-        if matches:
-            args = dict(matches)
-            if not self._validate_args(args):
-                return None, {}
-
-            input = input.split("--")[0].strip()
+    def _parse_input(self, input: str) -> Tuple[str, ModelOverrides]:
+        input, args = parse_args(input)
+        if not self._validate_args(args):
+            return None, {}
 
         return input, args
+
+    def _add_user_message(self, user_input: str, args: ModelOverrides):
+        user_message = {"role": "user", "content": user_input}
+        logging.info(f"message: {user_message}, args: {args}")
+        self.messages.append(user_message)
+        self.user_prompts.append((user_message, args))
+
+    def _rollback_user_message(self):
+        self.messages = self.messages[:-1]
+        self.user_prompts = self.user_prompts[:-1]
 
     def loop(self):
         console = Console(width=80)
         console.print(Markdown(TERMINAL_WELCOME))
 
         while True:
-            while (next_user_input := self.request_input()) == "":
+            while (next_user_input := self._request_input()) == "":
                 pass
 
             if next_user_input in COMMAND_QUIT:
                 break
             elif next_user_input in COMMAND_CLEAR:
-                self.clear()
-                logging.info("Cleared the conversation.")
+                self._clear()
                 continue
             elif next_user_input in COMMAND_RERUN:
-                self.rerun()
+                self._rerun()
                 continue
 
-            user_input, args = self.parse_input(next_user_input)
+            user_input, args = self._parse_input(next_user_input)
             if user_input is None:
                 continue
 
@@ -204,11 +149,7 @@ class ChatSession:
                     f"[bold yellow]Running model with: {args}[/bold yellow]"
                 )
 
-            user_message = {"role": "user", "content": user_input}
-            logging.info(f"message: {user_message}, args: {args}")
-            self.messages.append(user_message)
-            self.user_prompts.append((user_message, args))
-            if not self.respond(args):
-                # Roll back the last user message
-                self.messages = self.messages[:-1]
-                self.user_prompts = self.user_prompts[:-1]
+            self._add_user_message(user_input, args)
+            response_saved = self._respond(args)
+            if not response_saved:
+                self._rollback_user_message()
