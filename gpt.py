@@ -107,7 +107,13 @@ def main():
     assistant = init_assistant(args, config.assistants)
     logging.info("Starting a new chat session. Assistant config: %s", assistant.config)
 
-    openai.api_key = config.api_key
+    if config.api_key:
+        openai.api_key = config.api_key
+    else:
+        print(
+            "No API key found. Please set the OPENAI_API_KEY environment variable or `api_key: <key>` value in ~/.gptrc"
+        )
+        sys.exit(1)
     session = ChatSession(assistant=assistant, markdown=args.markdown)
     session.loop()
 
