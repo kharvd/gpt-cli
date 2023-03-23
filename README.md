@@ -4,22 +4,37 @@ Command-line interface for ChatGPT.
 
 ![screenshot](./screenshot.png)
 
+## Features
+
+- **Command-Line Interface**: Interact with ChatGPT directly from your terminal.
+- **Multiple Assistants**: Easily switch between different assistants, including general, dev, and custom assistants defined in the config file.
+- **Model Customization**: Override the default model, temperature, and top_p values for each assistant, giving you fine-grained control over the AI's behavior.
+- **Keyboard Shortcuts**: Use Ctrl-C, Ctrl-D, and Ctrl-R shortcuts for easier conversation management and input control.
+- **Multi-Line Input**: Enter multi-line mode for more complex queries or conversations.
+- **Markdown Support**: Enable or disable markdown formatting for chat sessions to tailor the output to your preferences.
+- **Flexible Configuration**: Define your assistants, model parameters, and API key in a YAML configuration file, allowing for easy customization and management.
+- **Predefined Messages**: Set up predefined messages for your custom assistants to establish context or role-play scenarios.
+
 ## Usage
 
 Make sure to set the `OPENAI_API_KEY` environment variable to your OpenAI API key (or put it in the `~/.gptrc` file as described below).
 
 ```
-usage: gpt.py [-h] [--model MODEL] [--temperature TEMPERATURE] [--top_p TOP_P] [{dev,general,pirate}]
+usage: gpt.py [-h] [--no_markdown] [--model MODEL] [--temperature TEMPERATURE] [--top_p TOP_P]
+              [{dev,general}]
 
 Run a chat session with ChatGPT.
 
 positional arguments:
-  {dev,general}         The name of assistant to use. `general` (default) is a generally helpful assistant,
-                        `dev` is a software development assistant. You can specify your own
-                        assistants in the config file ~/.gptrc. See the README for more information.
+  {dev,general}
+                        The name of assistant to use. `general` (default) is a generally helpful
+                        assistant, `dev` is a software development assistant with shorter responses. You
+                        can specify your own assistants in the config file ~/.gptrc. See the README for
+                        more information.
 
 optional arguments:
   -h, --help            show this help message and exit
+  --no_markdown         Disable markdown formatting in the chat session.
   --model MODEL         The model to use for the chat session. Overrides the default model defined for
                         the assistant.
   --temperature TEMPERATURE
@@ -51,6 +66,7 @@ You can configure the assistants in the config file `~/.gptrc`. The file is a YA
 
 ```yaml
 default_assistant: <assistant_name>
+markdown: False
 api_key: <openai_api_key>
 assistants:
   <assistant_name>:
@@ -70,6 +86,7 @@ Example:
 
 ```yaml
 default_assistant: dev
+markdown: True
 api_key: <openai_api_key>
 assistants:
   pirate:

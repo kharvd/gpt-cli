@@ -9,8 +9,12 @@ from blessings import Terminal
 from prompt_toolkit import PromptSession
 from prompt_toolkit.key_binding import KeyBindings
 from openai import OpenAIError, InvalidRequestError
+from rich.live import Live
+from rich.console import Console
+from rich.text import Text
+from rich.markdown import Markdown
 
-SYSTEM_PROMPT_DEV = f"You are a helpful assistant who is an expert in software development. You are helping a user who is a software developer. Your responses are short and concise. You include code snippets when appropriate. Code snippets are formatted using Markdown. User's `uname`: {os.uname()}"
+SYSTEM_PROMPT_DEV = f"You are a helpful assistant who is an expert in software development. You are helping a user who is a software developer. Your responses are short and concise. You include code snippets when appropriate. Code snippets are formatted using Markdown with a correct language tag. User's `uname`: {os.uname()}"
 INIT_USER_PROMPT_DEV = "Your responses must be short and concise. Do not include explanations unless asked."
 SYSTEM_PROMPT_GENERAL = "You are a helpful assistant."
 
@@ -85,13 +89,29 @@ COMMAND_QUIT = ("quit", "q")
 COMMAND_RERUN = ("rerun", "r")
 
 
+def stream_print_response(text_iterator, markdown):
+    console = Console()
+    current_text = ""
+    with Live(console=console, auto_refresh=False) as live:
+        for next_text in text_iterator:
+            current_text += next_text
+            if markdown:
+                content = Markdown(current_text, style="green")
+            else:
+                content = Text(current_text, style="green")
+            live.update(content)
+            live.refresh()
+            yield next_text
+
+
 class ChatSession:
-    def __init__(self, assistant):
+    def __init__(self, assistant, markdown):
         self.assistant = assistant
         self.messages = assistant.init_messages()
         self.user_prompts = []
         self.term = Terminal()
         self.prompt_session = PromptSession()
+        self.markdown = markdown
 
     def clear(self):
         self.messages = self.assistant.init_messages()
@@ -113,11 +133,11 @@ class ChatSession:
     def respond(self, args):
         next_response = []
         try:
-            for response in self.assistant.complete_chat(
+            completion_iter = self.assistant.complete_chat(
                 self.messages, override_params=args
-            ):
+            )
+            for response in stream_print_response(completion_iter, self.markdown):
                 next_response.append(response)
-                print(self.term.green(response), end="", flush=True)
         except KeyboardInterrupt:
             # If the user interrupts the chat completion, we'll just return what we have so far
             pass
@@ -138,7 +158,6 @@ class ChatSession:
             logging.exception(e)
             return True
 
-        print("\n")
         next_response = {"role": "assistant", "content": "".join(next_response)}
         logging.info(next_response)
         self.messages.append(next_response)
@@ -286,6 +305,13 @@ def parse_args(config):
         help="The name of assistant to use. `general` (default) is a generally helpful assistant, `dev` is a software development assistant with shorter responses. You can specify your own assistants in the config file ~/.gptrc. See the README for more information.",
     )
     parser.add_argument(
+        "--no_markdown",
+        action="store_false",
+        dest="markdown",
+        help="Disable markdown formatting in the chat session.",
+        default=config.get("markdown", True),
+    )
+    parser.add_argument(
         "--model",
         type=str,
         default=None,
@@ -331,12 +357,14 @@ def main():
             level=args.log_level,
             format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
         )
+        # Disable overly verbose logging for markdown_it
+        logging.getLogger("markdown_it").setLevel(logging.INFO)
 
     assistant = init_assistant(args, config.get("assistants", {}))
     logging.info("Starting a new chat session. Assistant config: %s", assistant.config)
 
     openai.api_key = config.get("api_key", os.environ.get("OPENAI_API_KEY"))
-    session = ChatSession(assistant=assistant)
+    session = ChatSession(assistant=assistant, markdown=args.markdown)
     session.loop()
 
 
