@@ -19,7 +19,7 @@ INIT_USER_PROMPT_DEV = "Your responses must be short and concise. Do not include
 SYSTEM_PROMPT_GENERAL = "You are a helpful assistant."
 
 ASSISTANT_DEFAULTS = {
-    "model": "gpt-3.5-turbo",
+    "model": "gpt-4",
     "temperature": 0.7,
     "top_p": 1,
 }
@@ -102,6 +102,7 @@ def stream_print_response(text_iterator, markdown):
             live.update(content)
             live.refresh()
             yield next_text
+    console.print()
 
 
 class ChatSession:

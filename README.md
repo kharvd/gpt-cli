@@ -7,13 +7,13 @@ Command-line interface for ChatGPT.
 ## Features
 
 - **Command-Line Interface**: Interact with ChatGPT directly from your terminal.
-- **Multiple Assistants**: Easily switch between different assistants, including general, dev, and custom assistants defined in the config file.
 - **Model Customization**: Override the default model, temperature, and top_p values for each assistant, giving you fine-grained control over the AI's behavior.
 - **Keyboard Shortcuts**: Use Ctrl-C, Ctrl-D, and Ctrl-R shortcuts for easier conversation management and input control.
 - **Multi-Line Input**: Enter multi-line mode for more complex queries or conversations.
 - **Markdown Support**: Enable or disable markdown formatting for chat sessions to tailor the output to your preferences.
-- **Flexible Configuration**: Define your assistants, model parameters, and API key in a YAML configuration file, allowing for easy customization and management.
 - **Predefined Messages**: Set up predefined messages for your custom assistants to establish context or role-play scenarios.
+- **Multiple Assistants**: Easily switch between different assistants, including general, dev, and custom assistants defined in the config file.
+- **Flexible Configuration**: Define your assistants, model parameters, and API key in a YAML configuration file, allowing for easy customization and management.
 
 ## Usage
 
