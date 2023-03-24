@@ -6,7 +6,7 @@ import sys
 import logging
 
 from gptcli.assistant import Assistant, DEFAULT_ASSISTANTS, AssistantConfig
-from gptcli.cli import ChatSession, simple_response
+from gptcli.cli import ChatSession, execute, simple_response
 from gptcli.config import GptCliConfig, read_yaml_config
 
 
@@ -89,7 +89,14 @@ def parse_args(config: GptCliConfig):
         "-p",
         type=str,
         default=None,
-        help="If specified, will not start an interactive chat session and instead will print the response to standard output and exit. Use `-` to read the prompt from standard input. Incompatible with the --interactive option.",
+        help="If specified, will not start an interactive chat session and instead will print the response to standard output and exit. Use `-` to read the prompt from standard input.",
+    )
+    parser.add_argument(
+        "--execute",
+        "-e",
+        type=str,
+        default=None,
+        help="If specified, passes the prompt to the assistant and allows the user to edit the produced shell command before executing it. Implies --no_stream. Use `-` to read the prompt from standard input.",
     )
     parser.add_argument(
         "--no_stream",
@@ -99,6 +106,14 @@ def parse_args(config: GptCliConfig):
     )
 
     return parser.parse_args()
+
+
+def validate_args(args):
+    if args.prompt is not None and args.execute is not None:
+        print(
+            "The --prompt and --execute options are mutually exclusive. Please specify only one of them."
+        )
+        sys.exit(1)
 
 
 def main():
@@ -127,10 +142,21 @@ def main():
 
     assistant = init_assistant(args, config.assistants)
 
-    if args.prompt is None:
-        run_interactive(args, assistant)
-    else:
+    if args.prompt is not None:
         run_non_interactive(args, assistant)
+    elif args.execute is not None:
+        run_execute(args, assistant)
+    else:
+        run_interactive(args, assistant)
+
+
+def run_execute(args, assistant):
+    logging.info(
+        "Starting a non-interactive execution session with prompt '%s'. Assistant config: %s",
+    )
+    if args.execute == "-":
+        args.execute = "".join(sys.stdin.readlines())
+    execute(assistant, args.execute)
 
 
 def run_non_interactive(args, assistant):

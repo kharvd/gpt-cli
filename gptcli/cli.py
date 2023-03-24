@@ -1,6 +1,9 @@
+import os
 import re
 import logging
+import subprocess
 import sys
+import tempfile
 from prompt_toolkit import PromptSession
 from openai import OpenAIError, InvalidRequestError
 from rich.console import Console
@@ -171,3 +174,34 @@ def simple_response(assistant: Assistant, prompt: str, stream: bool) -> None:
     finally:
         sys.stdout.flush()
         logging.info(f"response: '{result}'")
+
+
+def execute(assistant: Assistant, prompt: str) -> None:
+    messages = assistant.init_messages()
+    messages.append({"role": "user", "content": prompt})
+    logging.info(f"message: {messages[-1]}")
+    response_iter = assistant.complete_chat(messages, stream=False)
+    result = next(response_iter)
+
+    with tempfile.NamedTemporaryFile(mode="w", prefix="gptcli-", delete=False) as f:
+        f.write("# Edit the command to execute below. Save and exit to execute it.\n")
+        f.write("# Delete the contents to cancel.\n")
+        f.write(result)
+        f.flush()
+
+    editor = os.environ.get("EDITOR", "nano")
+    subprocess.run([editor, f.name])
+
+    with open(f.name) as f:
+        lines = [line for line in f.readlines() if not line.startswith("#")]
+        command = "".join(lines).strip()
+
+    if command == "":
+        print("No command to execute.")
+        return
+
+    shell = os.environ.get("SHELL", "/bin/bash")
+
+    logging.info(f"Executing: {command}")
+    print(f"Executing:\n{command}")
+    subprocess.run([shell, f.name])
