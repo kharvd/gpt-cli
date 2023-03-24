@@ -38,7 +38,7 @@ export OPENAI_API_TOKEN=<your_token_here>
 Run the tool
 
 ```
-python gpt.py
+./gpt.py
 ```
 
 You can also use a `.gptrc` file for configuration. See the [Configuration](README.md#Configuration) section below.
