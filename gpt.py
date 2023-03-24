@@ -97,7 +97,7 @@ def parse_args(config: GptCliConfig):
         "-p",
         type=str,
         default=None,
-        help="If specified, will not start an interactive chat session and instead will print the response to standard output and exit. Use `-` to read the prompt from standard input.",
+        help="If specified, will not start an interactive chat session and instead will print the response to standard output and exit. Use `-` to read the prompt from standard input. Implies --no_markdown.",
     )
     parser.add_argument(
         "--execute",
