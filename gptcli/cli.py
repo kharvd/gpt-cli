@@ -85,7 +85,7 @@ class ChatSession:
             return True
 
         next_response = {"role": "assistant", "content": next_response}
-        logging.info(next_response)
+        logging.info(f"response: '{next_response}'")
         self.messages.append(next_response)
         return True
 
@@ -159,11 +159,15 @@ class ChatSession:
 def simple_response(assistant: Assistant, prompt: str, stream: bool) -> None:
     messages = assistant.init_messages()
     messages.append({"role": "user", "content": prompt})
+    logging.info(f"message: {messages[-1]}")
     response_iter = assistant.complete_chat(messages, stream=stream)
+    result = ""
     try:
         for response in response_iter:
+            result += response
             sys.stdout.write(response)
     except KeyboardInterrupt:
         pass
     finally:
         sys.stdout.flush()
+        logging.info(f"response: '{result}'")
