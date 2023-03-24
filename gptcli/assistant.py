@@ -2,11 +2,7 @@ import os
 from attr import dataclass
 import openai
 
-from typing import Iterator, TypedDict, List
-
-SYSTEM_PROMPT_DEV = f"You are a helpful assistant who is an expert in software development. You are helping a user who is a software developer. Your responses are short and concise. You include code snippets when appropriate. Code snippets are formatted using Markdown with a correct language tag. User's `uname`: {os.uname()}"
-INIT_USER_PROMPT_DEV = "Your responses must be short and concise. Do not include explanations unless asked."
-SYSTEM_PROMPT_GENERAL = "You are a helpful assistant."
+from typing import Iterator, Optional, TypedDict, List
 
 
 class Message(TypedDict):
@@ -20,24 +16,43 @@ class ModelOverrides(TypedDict):
     top_p: float
 
 
-@dataclass
-class AssistantConfig:
-    messages: List[Message]
-    model: str = "gpt-3.5-turbo"
-    temperature: float = 0.7
-    top_p: float = 1.0
+class AssistantConfig(TypedDict):
+    messages: Optional[List[Message]]
+    model: Optional[str]
+    temperature: Optional[float]
+    top_p: Optional[float]
 
+
+CONFIG_DEFAULTS = {
+    "model": "gpt-3.5-turbo",
+    "temperature": 0.7,
+    "top_p": 1.0,
+}
 
 DEFAULT_ASSISTANTS = {
-    "dev": AssistantConfig(
-        messages=[
-            {"role": "system", "content": SYSTEM_PROMPT_DEV},
-            {"role": "user", "content": INIT_USER_PROMPT_DEV},
+    "dev": {
+        "messages": [
+            {
+                "role": "system",
+                "content": f"You are a helpful assistant who is an expert in software development. You are helping a user who is a software developer. Your responses are short and concise. You include code snippets when appropriate. Code snippets are formatted using Markdown with a correct language tag. User's `uname`: {os.uname()}",
+            },
+            {
+                "role": "user",
+                "content": "Your responses must be short and concise. Do not include explanations unless asked.",
+            },
         ],
-    ),
-    "general": AssistantConfig(
-        messages=[{"role": "system", "content": SYSTEM_PROMPT_GENERAL}],
-    ),
+    },
+    "general": {
+        "messages": [{"role": "system", "content": "You are a helpful assistant."}],
+    },
+    "bash": {
+        "messages": [
+            {
+                "role": "system",
+                "content": f"You output only valid and correct shell commands according to the user's prompt. You don't provide any explanations or any other text that is not valid shell commands. User's `uname`: {os.uname()}. User's `$SHELL`: {os.environ.get('SHELL')}.",
+            }
+        ],
+    },
 }
 
 
@@ -45,11 +60,31 @@ class Assistant:
     def __init__(self, config: AssistantConfig):
         self.config = config
 
+    @classmethod
+    def from_config(cls, name: str, config: AssistantConfig):
+        if name in DEFAULT_ASSISTANTS:
+            # Merge the config with the default config
+            # If a key is in both, use the value from the config
+            default_config = DEFAULT_ASSISTANTS[name]
+            for key in [*config.keys(), *default_config.keys()]:
+                if config.get(key) is None:
+                    config[key] = default_config[key]
+
+        return cls(config)
+
     def init_messages(self) -> List[Message]:
-        return self.config.messages[:]
+        return self.config["messages"][:]
 
     def supported_overrides(self) -> List[str]:
         return ["model", "temperature", "top_p"]
+
+    def _param(self, param: str, override_params: ModelOverrides) -> float:
+        # If the param is in the override_params, use that value
+        # Otherwise, use the value from the config
+        # Otherwise, use the default value
+        return override_params.get(
+            param, self.config.get(param, CONFIG_DEFAULTS[param])
+        )
 
     def complete_chat(
         self, messages, override_params: ModelOverrides = {}, stream: bool = True
@@ -57,11 +92,9 @@ class Assistant:
         response_iter = openai.ChatCompletion.create(
             messages=messages,
             stream=stream,
-            model=override_params.get("model", self.config.model),
-            temperature=float(
-                override_params.get("temperature", self.config.temperature)
-            ),
-            top_p=float(override_params.get("top_p", self.config.top_p)),
+            model=self._param("model", override_params),
+            temperature=float(self._param("temperature", override_params)),
+            top_p=float(self._param("top_p", override_params)),
         )
 
         if stream:

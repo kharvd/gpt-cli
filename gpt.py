@@ -23,15 +23,23 @@ sys.excepthook = exception_handler
 
 
 def init_assistant(args, custom_assistants: Dict[str, AssistantConfig]) -> Assistant:
-    all_assistants = {**DEFAULT_ASSISTANTS, **custom_assistants}
-    assistant_config = all_assistants[args.assistant_name]
+    name = args.assistant_name
+    if name in custom_assistants:
+        assistant = Assistant.from_config(name, custom_assistants[name])
+    elif name in DEFAULT_ASSISTANTS:
+        assistant = Assistant.from_config(name, DEFAULT_ASSISTANTS[name])
+    else:
+        print(f"Unknown assistant: {name}")
+        sys.exit(1)
+
+    # Override config with command line arguments
     if args.temperature is not None:
-        assistant_config.temperature = args.temperature
+        assistant.config["temperature"] = args.temperature
     if args.model is not None:
-        assistant_config.model = args.model
+        assistant.config["model"] = args.model
     if args.top_p is not None:
-        assistant_config.top_p = args.top_p
-    return Assistant(assistant_config)
+        assistant.config["top_p"] = args.top_p
+    return assistant
 
 
 def parse_args(config: GptCliConfig):
@@ -43,7 +51,7 @@ def parse_args(config: GptCliConfig):
         type=str,
         default=config.default_assistant,
         nargs="?",
-        choices=["dev", "general", *config.assistants.keys()],
+        choices=[*DEFAULT_ASSISTANTS.keys(), *config.assistants.keys()],
         help="The name of assistant to use. `general` (default) is a generally helpful assistant, `dev` is a software development assistant with shorter responses. You can specify your own assistants in the config file ~/.gptrc. See the README for more information.",
     )
     parser.add_argument(
