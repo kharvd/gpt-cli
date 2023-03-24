@@ -52,11 +52,11 @@ class Assistant:
         return ["model", "temperature", "top_p"]
 
     def complete_chat(
-        self, messages, override_params: ModelOverrides = {}
+        self, messages, override_params: ModelOverrides = {}, stream: bool = True
     ) -> Iterator[str]:
         response_iter = openai.ChatCompletion.create(
             messages=messages,
-            stream=True,
+            stream=stream,
             model=override_params.get("model", self.config.model),
             temperature=float(
                 override_params.get("temperature", self.config.temperature)
@@ -64,11 +64,14 @@ class Assistant:
             top_p=float(override_params.get("top_p", self.config.top_p)),
         )
 
-        # Now iterate over the response iterator to yield the next response
-        for response in response_iter:
-            next_choice = response["choices"][0]
-            if (
-                next_choice["finish_reason"] is None
-                and "content" in next_choice["delta"]
-            ):
-                yield next_choice["delta"]["content"]
+        if stream:
+            for response in response_iter:
+                next_choice = response["choices"][0]
+                if (
+                    next_choice["finish_reason"] is None
+                    and "content" in next_choice["delta"]
+                ):
+                    yield next_choice["delta"]["content"]
+        else:
+            next_choice = response_iter["choices"][0]
+            yield next_choice["message"]["content"]

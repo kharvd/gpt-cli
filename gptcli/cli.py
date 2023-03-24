@@ -1,5 +1,6 @@
 import re
 import logging
+import sys
 from prompt_toolkit import PromptSession
 from openai import OpenAIError, InvalidRequestError
 from rich.console import Console
@@ -153,3 +154,16 @@ class ChatSession:
             response_saved = self._respond(args)
             if not response_saved:
                 self._rollback_user_message()
+
+
+def simple_response(assistant: Assistant, prompt: str, stream: bool) -> None:
+    messages = assistant.init_messages()
+    messages.append({"role": "user", "content": prompt})
+    response_iter = assistant.complete_chat(messages, stream=stream)
+    try:
+        for response in response_iter:
+            sys.stdout.write(response)
+    except KeyboardInterrupt:
+        pass
+    finally:
+        sys.stdout.flush()

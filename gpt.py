@@ -6,7 +6,7 @@ import sys
 import logging
 
 from gptcli.assistant import Assistant, DEFAULT_ASSISTANTS, AssistantConfig
-from gptcli.cli import ChatSession
+from gptcli.cli import ChatSession, simple_response
 from gptcli.config import GptCliConfig, read_yaml_config
 
 
@@ -84,6 +84,19 @@ def parse_args(config: GptCliConfig):
         choices=["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"],
         help=argparse.SUPPRESS,
     )
+    parser.add_argument(
+        "--prompt",
+        "-p",
+        type=str,
+        default=None,
+        help="If specified, will not start an interactive chat session and instead will print the response to standard output and exit. Use `-` to read the prompt from standard input. Incompatible with the --interactive option.",
+    )
+    parser.add_argument(
+        "--no_stream",
+        action="store_true",
+        default=False,
+        help="If specified, will not stream the response to standard output. This is useful if you want to use the response in a script. Ignored when the --prompt option is not specified.",
+    )
 
     return parser.parse_args()
 
@@ -104,9 +117,6 @@ def main():
         # Disable overly verbose logging for markdown_it
         logging.getLogger("markdown_it").setLevel(logging.INFO)
 
-    assistant = init_assistant(args, config.assistants)
-    logging.info("Starting a new chat session. Assistant config: %s", assistant.config)
-
     if config.api_key:
         openai.api_key = config.api_key
     else:
@@ -114,6 +124,28 @@ def main():
             "No API key found. Please set the OPENAI_API_KEY environment variable or `api_key: <key>` value in ~/.gptrc"
         )
         sys.exit(1)
+
+    assistant = init_assistant(args, config.assistants)
+
+    if args.prompt is None:
+        run_interactive(args, assistant)
+    else:
+        run_non_interactive(args, assistant)
+
+
+def run_non_interactive(args, assistant):
+    logging.info(
+        "Starting a non-interactive session with prompt '%s'. Assistant config: %s",
+        args.prompt,
+        assistant.config,
+    )
+    if args.prompt == "-":
+        args.prompt = "".join(sys.stdin.readlines())
+    simple_response(assistant, args.prompt, stream=not args.no_stream)
+
+
+def run_interactive(args, assistant):
+    logging.info("Starting a new chat session. Assistant config: %s", assistant.config)
     session = ChatSession(assistant=assistant, markdown=args.markdown)
     session.loop()
 

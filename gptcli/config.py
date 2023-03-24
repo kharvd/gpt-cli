@@ -14,6 +14,7 @@ class GptCliConfig:
     log_file: Optional[str] = None
     log_level: str = "INFO"
     assistants: Dict[str, AssistantConfig] = {}
+    interactive: Optional[bool] = None
 
 
 def read_yaml_config(file_path: str) -> GptCliConfig:
