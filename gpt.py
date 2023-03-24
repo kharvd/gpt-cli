@@ -96,8 +96,9 @@ def parse_args(config: GptCliConfig):
         "--prompt",
         "-p",
         type=str,
+        action="append",
         default=None,
-        help="If specified, will not start an interactive chat session and instead will print the response to standard output and exit. Use `-` to read the prompt from standard input. Implies --no_markdown.",
+        help="If specified, will not start an interactive chat session and instead will print the response to standard output and exit. May be specified multiple times. Use `-` to read the prompt from standard input. Implies --no_markdown.",
     )
     parser.add_argument(
         "--execute",
@@ -173,9 +174,10 @@ def run_non_interactive(args, assistant):
         args.prompt,
         assistant.config,
     )
-    if args.prompt == "-":
-        args.prompt = "".join(sys.stdin.readlines())
-    simple_response(assistant, args.prompt, stream=not args.no_stream)
+    if "-" in args.prompt:
+        args.prompt[args.prompt.index("-")] = "".join(sys.stdin.readlines())
+
+    simple_response(assistant, "\n".join(args.prompt), stream=not args.no_stream)
 
 
 def run_interactive(args, assistant):
