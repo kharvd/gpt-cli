@@ -32,7 +32,7 @@ In this example we use nano, you can use any text editor.
 
 ```
 nano ~/.bashrc
-export OPENAI_API_TOKEN=<your_token_here>
+export OPENAI_API_KEY=<your_key_here>
 ```
 
 Run the tool
