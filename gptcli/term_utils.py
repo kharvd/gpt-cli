@@ -21,7 +21,9 @@ class StreamingMarkdownPrinter:
         self.live: Optional[Live] = None
 
     def __enter__(self):
-        self.live = Live(console=self.console, auto_refresh=False)
+        self.live = Live(
+            console=self.console, auto_refresh=False, vertical_overflow="visible"
+        )
         self.live.__enter__()
         return self
 
