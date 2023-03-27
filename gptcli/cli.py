@@ -87,8 +87,8 @@ class ChatSession:
             logging.exception(e)
             return True
 
+        logging.info("Assistant: %s", next_response)
         next_response = {"role": "assistant", "content": next_response}
-        logging.info(f"response: '{next_response}'")
         self.messages.append(next_response)
         return True
 
@@ -119,7 +119,9 @@ class ChatSession:
 
     def _add_user_message(self, user_input: str, args: ModelOverrides):
         user_message = {"role": "user", "content": user_input}
-        logging.info(f"message: {user_message}, args: {args}")
+        logging.info("User: %s", user_input)
+        if len(args) > 0:
+            logging.info("args: %s", args)
         self.messages.append(user_message)
         self.user_prompts.append((user_message, args))
 
@@ -162,7 +164,7 @@ class ChatSession:
 def simple_response(assistant: Assistant, prompt: str, stream: bool) -> None:
     messages = assistant.init_messages()
     messages.append({"role": "user", "content": prompt})
-    logging.info(f"message: {messages[-1]}")
+    logging.info("User: %s", prompt)
     response_iter = assistant.complete_chat(messages, stream=stream)
     result = ""
     try:
@@ -173,15 +175,16 @@ def simple_response(assistant: Assistant, prompt: str, stream: bool) -> None:
         pass
     finally:
         sys.stdout.flush()
-        logging.info(f"response: '{result}'")
+        logging.info("Assistant: %s", result)
 
 
 def execute(assistant: Assistant, prompt: str) -> None:
     messages = assistant.init_messages()
     messages.append({"role": "user", "content": prompt})
-    logging.info(f"message: {messages[-1]}")
+    logging.info("User: %s", prompt)
     response_iter = assistant.complete_chat(messages, stream=False)
     result = next(response_iter)
+    logging.info("Assistant: %s", result)
 
     with tempfile.NamedTemporaryFile(mode="w", prefix="gptcli-", delete=False) as f:
         f.write("# Edit the command to execute below. Save and exit to execute it.\n")
