@@ -7,8 +7,14 @@ import sys
 import logging
 
 from gptcli.assistant import Assistant, DEFAULT_ASSISTANTS, AssistantConfig
-from gptcli.cli import ChatSession, execute, simple_response
+from gptcli.cli import (
+    CLIChatListener,
+    CLIUserInputProvider,
+)
+from gptcli.composite import CompositeChatListener
 from gptcli.config import GptCliConfig, read_yaml_config
+from gptcli.session import ChatSession
+from gptcli.shell import execute, simple_response
 
 
 default_exception_handler = sys.excepthook
@@ -181,9 +187,20 @@ def run_non_interactive(args, assistant):
     simple_response(assistant, "\n".join(args.prompt), stream=not args.no_stream)
 
 
+class CLIChatSession(ChatSession):
+    def __init__(self, assistant: Assistant, markdown: bool):
+        listener = CompositeChatListener(
+            [
+                CLIChatListener(markdown),
+            ]
+        )
+        input_provider = CLIUserInputProvider()
+        super().__init__(assistant, listener, input_provider)
+
+
 def run_interactive(args, assistant):
     logging.info("Starting a new chat session. Assistant config: %s", assistant.config)
-    session = ChatSession(assistant=assistant, markdown=args.markdown)
+    session = CLIChatSession(assistant=assistant, markdown=args.markdown)
     session.loop()
 
 
