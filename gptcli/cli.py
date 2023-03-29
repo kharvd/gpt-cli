@@ -1,24 +1,21 @@
-import os
-import re
-import logging
-import subprocess
-import sys
-import tempfile
 from prompt_toolkit import PromptSession
 from openai import OpenAIError, InvalidRequestError
 from rich.console import Console
 from rich.markdown import Markdown
-from typing import Any, Dict, List, Tuple
+from typing import Tuple
+from gptcli.session import (
+    ChatListener,
+    InvalidArgumentError,
+    ResponseStreamer,
+    UserInputProvider,
+)
 
 from gptcli.term_utils import (
-    COMMAND_CLEAR,
-    COMMAND_QUIT,
-    COMMAND_RERUN,
     StreamingMarkdownPrinter,
     parse_args,
     prompt,
 )
-from gptcli.assistant import Assistant, ModelOverrides
+from gptcli.assistant import ModelOverrides
 
 
 TERMINAL_WELCOME = """
@@ -29,68 +26,69 @@ Exit the multi-line mode by pressing ESC and then Enter (Meta+Enter).
 """
 
 
-class ChatSession:
-    def __init__(self, assistant: Assistant, markdown: bool):
-        self.assistant = assistant
-        self.messages = assistant.init_messages()
-        self.user_prompts: List[Tuple[str, ModelOverrides]] = []
-        self.prompt_session = PromptSession[str]()
+class CLIResponseStreamer(ResponseStreamer):
+    def __init__(self, console: Console, markdown: bool):
+        self.console = console
+        self.markdown = markdown
+        self.printer = StreamingMarkdownPrinter(self.console, self.markdown)
+
+    def __enter__(self):
+        self.printer.__enter__()
+        return self
+
+    def on_next_token(self, token: str):
+        self.printer.print(token)
+
+    def __exit__(self, *args):
+        self.printer.__exit__(*args)
+
+
+class CLIChatListener(ChatListener):
+    def __init__(self, markdown: bool):
         self.markdown = markdown
         self.console = Console()
 
-    def _clear(self):
-        self.messages = self.assistant.init_messages()
-        self.user_prompts = []
+    def on_chat_start(self):
+        console = Console(width=80)
+        console.print(Markdown(TERMINAL_WELCOME))
+
+    def on_chat_clear(self):
         self.console.print("[bold]Cleared the conversation.[/bold]")
-        logging.info("Cleared the conversation.")
 
-    def _rerun(self):
-        if len(self.user_prompts) == 0:
+    def on_chat_rerun(self, success: bool):
+        if success:
+            self.console.print("[bold]Re-running the last message.[/bold]")
+        else:
             self.console.print("[bold]Nothing to re-run.[/bold]")
-            return
 
-        if self.messages[-1]["role"] == "assistant":
-            self.messages = self.messages[:-1]
-
-        self.console.print("[bold]Re-running the last message.[/bold]")
-        logging.info("Re-generating the last message.")
-        _, args = self.user_prompts[-1]
-        self._respond(args)
-
-    def _respond(self, args: ModelOverrides) -> bool:
-        """
-        Respond to the user's input and return whether the assistant's response was saved.
-        """
-        next_response = ""
-        try:
-            completion_iter = self.assistant.complete_chat(
-                self.messages, override_params=args
-            )
-
-            with StreamingMarkdownPrinter(self.console, self.markdown) as stream:
-                for response in completion_iter:
-                    next_response += response
-                    stream.print(response)
-        except KeyboardInterrupt:
-            # If the user interrupts the chat completion, we'll just return what we have so far
-            pass
-        except InvalidRequestError as e:
+    def on_error(self, e: Exception):
+        if isinstance(e, InvalidRequestError):
             self.console.print(
                 f"[red]Request Error. The last prompt was not saved: {type(e)}: {e}[/red]"
             )
-            logging.exception(e)
-            return False
-        except OpenAIError as e:
+        elif isinstance(e, OpenAIError):
             self.console.print(
                 f"[red]API Error. Type `r` or Ctrl-R to try again: {type(e)}: {e}[/red]"
             )
-            logging.exception(e)
-            return True
+        elif isinstance(e, InvalidArgumentError):
+            self.console.print(f"[red]{e.message}[/red]")
+        else:
+            self.console.print(f"[red]Error: {type(e)}: {e}[/red]")
 
-        logging.info("Assistant: %s", next_response)
-        next_response = {"role": "assistant", "content": next_response}
-        self.messages.append(next_response)
-        return True
+    def response_streamer(self) -> ResponseStreamer:
+        return CLIResponseStreamer(self.console, self.markdown)
+
+
+class CLIUserInputProvider(UserInputProvider):
+    def __init__(self) -> None:
+        self.prompt_session = PromptSession[str]()
+
+    def get_user_input(self) -> Tuple[str, ModelOverrides]:
+        while (next_user_input := self._request_input()) == "":
+            pass
+
+        user_input, args = self._parse_input(next_user_input)
+        return user_input, args
 
     def _request_input(self):
         line = prompt(self.prompt_session)
@@ -100,111 +98,6 @@ class ChatSession:
 
         return prompt(self.prompt_session, multiline=True)
 
-    def _validate_args(self, args: Dict[str, Any]):
-        for key in args:
-            supported_overrides = self.assistant.supported_overrides()
-            if key not in supported_overrides:
-                self.console.print(
-                    f"[red]Invalid argument: {key}. Allowed arguments: {supported_overrides}[/red]"
-                )
-                return False
-        return True
-
     def _parse_input(self, input: str) -> Tuple[str, ModelOverrides]:
         input, args = parse_args(input)
-        if not self._validate_args(args):
-            return None, {}
-
         return input, args
-
-    def _add_user_message(self, user_input: str, args: ModelOverrides):
-        user_message = {"role": "user", "content": user_input}
-        logging.info("User: %s", user_input)
-        if len(args) > 0:
-            logging.info("args: %s", args)
-        self.messages.append(user_message)
-        self.user_prompts.append((user_message, args))
-
-    def _rollback_user_message(self):
-        self.messages = self.messages[:-1]
-        self.user_prompts = self.user_prompts[:-1]
-
-    def loop(self):
-        console = Console(width=80)
-        console.print(Markdown(TERMINAL_WELCOME))
-
-        while True:
-            while (next_user_input := self._request_input()) == "":
-                pass
-
-            if next_user_input in COMMAND_QUIT:
-                break
-            elif next_user_input in COMMAND_CLEAR:
-                self._clear()
-                continue
-            elif next_user_input in COMMAND_RERUN:
-                self._rerun()
-                continue
-
-            user_input, args = self._parse_input(next_user_input)
-            if user_input is None:
-                continue
-
-            if args:
-                self.console.print(
-                    f"[bold yellow]Running model with: {args}[/bold yellow]"
-                )
-
-            self._add_user_message(user_input, args)
-            response_saved = self._respond(args)
-            if not response_saved:
-                self._rollback_user_message()
-
-
-def simple_response(assistant: Assistant, prompt: str, stream: bool) -> None:
-    messages = assistant.init_messages()
-    messages.append({"role": "user", "content": prompt})
-    logging.info("User: %s", prompt)
-    response_iter = assistant.complete_chat(messages, stream=stream)
-    result = ""
-    try:
-        for response in response_iter:
-            result += response
-            sys.stdout.write(response)
-    except KeyboardInterrupt:
-        pass
-    finally:
-        sys.stdout.flush()
-        logging.info("Assistant: %s", result)
-
-
-def execute(assistant: Assistant, prompt: str) -> None:
-    messages = assistant.init_messages()
-    messages.append({"role": "user", "content": prompt})
-    logging.info("User: %s", prompt)
-    response_iter = assistant.complete_chat(messages, stream=False)
-    result = next(response_iter)
-    logging.info("Assistant: %s", result)
-
-    with tempfile.NamedTemporaryFile(mode="w", prefix="gptcli-", delete=False) as f:
-        f.write("# Edit the command to execute below. Save and exit to execute it.\n")
-        f.write("# Delete the contents to cancel.\n")
-        f.write(result)
-        f.flush()
-
-    editor = os.environ.get("EDITOR", "nano")
-    subprocess.run([editor, f.name])
-
-    with open(f.name) as f:
-        lines = [line for line in f.readlines() if not line.startswith("#")]
-        command = "".join(lines).strip()
-
-    if command == "":
-        print("No command to execute.")
-        return
-
-    shell = os.environ.get("SHELL", "/bin/bash")
-
-    logging.info(f"Executing: {command}")
-    print(f"Executing:\n{command}")
-    subprocess.run([shell, f.name])

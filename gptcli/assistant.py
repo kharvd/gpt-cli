@@ -1,8 +1,9 @@
 import os
+import sys
 from attr import dataclass
 import openai
 
-from typing import Iterator, Optional, TypedDict, List
+from typing import Dict, Iterator, Optional, TypedDict, List
 
 
 class Message(TypedDict):
@@ -62,6 +63,7 @@ class Assistant:
 
     @classmethod
     def from_config(cls, name: str, config: AssistantConfig):
+        config = config.copy()
         if name in DEFAULT_ASSISTANTS:
             # Merge the config with the default config
             # If a key is in both, use the value from the config
@@ -108,3 +110,33 @@ class Assistant:
         else:
             next_choice = response_iter["choices"][0]
             yield next_choice["message"]["content"]
+
+
+@dataclass
+class AssistantGlobalArgs:
+    assistant_name: str
+    model: Optional[str] = None
+    temperature: Optional[float] = None
+    top_p: Optional[float] = None
+
+
+def init_assistant(
+    args: AssistantGlobalArgs, custom_assistants: Dict[str, AssistantConfig]
+) -> Assistant:
+    name = args.assistant_name
+    if name in custom_assistants:
+        assistant = Assistant.from_config(name, custom_assistants[name])
+    elif name in DEFAULT_ASSISTANTS:
+        assistant = Assistant.from_config(name, DEFAULT_ASSISTANTS[name])
+    else:
+        print(f"Unknown assistant: {name}")
+        sys.exit(1)
+
+    # Override config with command line arguments
+    if args.temperature is not None:
+        assistant.config["temperature"] = args.temperature
+    if args.model is not None:
+        assistant.config["model"] = args.model
+    if args.top_p is not None:
+        assistant.config["top_p"] = args.top_p
+    return assistant
