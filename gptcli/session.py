@@ -1,5 +1,5 @@
-from abc import abstractmethod
 import logging
+from abc import abstractmethod
 from gptcli.assistant import Assistant, Message, ModelOverrides
 from gptcli.term_utils import COMMAND_CLEAR, COMMAND_QUIT, COMMAND_RERUN
 from openai import InvalidRequestError, OpenAIError
@@ -108,7 +108,7 @@ class ChatSession:
 
         logging.info("Assistant: %s", next_response)
         next_response = {"role": "assistant", "content": next_response}
-        self.messages.append(next_response)
+        self.messages = self.messages + [next_response]
         self.listener.on_chat_message(next_response)
         return True
 
@@ -127,7 +127,7 @@ class ChatSession:
     def _add_user_message(self, user_input: str, args: ModelOverrides):
         logging.info("User: %s", user_input)
         user_message = {"role": "user", "content": user_input}
-        self.messages.append(user_message)
+        self.messages = self.messages + [user_message]
         self.listener.on_chat_message(user_message)
         self.user_prompts.append((user_message, args))
 
@@ -135,24 +135,32 @@ class ChatSession:
         self.messages = self.messages[:-1]
         self.user_prompts = self.user_prompts[:-1]
 
+    def process_input(self):
+        """
+        Process the user's input and return whether the session should continue.
+        """
+        user_input, args = self.input_provider.get_user_input()
+        if not self._validate_args(args):
+            return True
+
+        if user_input in COMMAND_QUIT:
+            return False
+        elif user_input in COMMAND_CLEAR:
+            self._clear()
+            return True
+        elif user_input in COMMAND_RERUN:
+            self._rerun()
+            return True
+
+        self._add_user_message(user_input, args)
+        response_saved = self._respond(args)
+        if not response_saved:
+            self._rollback_user_message()
+
+        return True
+
     def loop(self):
         self.listener.on_chat_start()
 
-        while True:
-            user_input, args = self.input_provider.get_user_input()
-            if not self._validate_args(args):
-                continue
-
-            if user_input in COMMAND_QUIT:
-                break
-            elif user_input in COMMAND_CLEAR:
-                self._clear()
-                continue
-            elif user_input in COMMAND_RERUN:
-                self._rerun()
-                continue
-
-            self._add_user_message(user_input, args)
-            response_saved = self._respond(args)
-            if not response_saved:
-                self._rollback_user_message()
+        while self.process_input():
+            pass
