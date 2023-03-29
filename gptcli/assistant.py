@@ -1,5 +1,4 @@
 import os
-from attr import dataclass
 import openai
 
 from typing import Iterator, Optional, TypedDict, List
