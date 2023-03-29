@@ -1,12 +1,15 @@
 #!/usr/bin/env python
-from typing import Dict
 import openai
 import os
 import argparse
 import sys
 import logging
 
-from gptcli.assistant import Assistant, DEFAULT_ASSISTANTS, AssistantConfig
+from gptcli.assistant import (
+    Assistant,
+    DEFAULT_ASSISTANTS,
+    init_assistant,
+)
 from gptcli.cli import (
     CLIChatListener,
     CLIUserInputProvider,
@@ -27,26 +30,6 @@ def exception_handler(type, value, traceback):
 
 
 sys.excepthook = exception_handler
-
-
-def init_assistant(args, custom_assistants: Dict[str, AssistantConfig]) -> Assistant:
-    name = args.assistant_name
-    if name in custom_assistants:
-        assistant = Assistant.from_config(name, custom_assistants[name])
-    elif name in DEFAULT_ASSISTANTS:
-        assistant = Assistant.from_config(name, DEFAULT_ASSISTANTS[name])
-    else:
-        print(f"Unknown assistant: {name}")
-        sys.exit(1)
-
-    # Override config with command line arguments
-    if args.temperature is not None:
-        assistant.config["temperature"] = args.temperature
-    if args.model is not None:
-        assistant.config["model"] = args.model
-    if args.top_p is not None:
-        assistant.config["top_p"] = args.top_p
-    return assistant
 
 
 def parse_args(config: GptCliConfig):
