@@ -6,16 +6,17 @@ import tempfile
 from gptcli.assistant import Assistant
 
 
-def simple_response(assistant: Assistant, prompt: str, stream: bool) -> None:
+async def simple_response(assistant: Assistant, prompt: str, stream: bool) -> None:
     messages = assistant.init_messages()
     messages.append({"role": "user", "content": prompt})
     logging.info("User: %s", prompt)
     response_iter = assistant.complete_chat(messages, stream=stream)
     result = ""
     try:
-        for response in response_iter:
+        async for response in response_iter:
             result += response
             sys.stdout.write(response)
+            sys.stdout.flush()
     except KeyboardInterrupt:
         pass
     finally:
@@ -23,12 +24,12 @@ def simple_response(assistant: Assistant, prompt: str, stream: bool) -> None:
         logging.info("Assistant: %s", result)
 
 
-def execute(assistant: Assistant, prompt: str) -> None:
+async def execute(assistant: Assistant, prompt: str) -> None:
     messages = assistant.init_messages()
     messages.append({"role": "user", "content": prompt})
     logging.info("User: %s", prompt)
     response_iter = assistant.complete_chat(messages, stream=False)
-    result = next(response_iter)
+    result = await response_iter.__anext__()
     logging.info("Assistant: %s", result)
 
     with tempfile.NamedTemporaryFile(mode="w", prefix="gptcli-", delete=False) as f:

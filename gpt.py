@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+import asyncio
 import openai
 import os
 import argparse
@@ -155,7 +156,7 @@ def run_execute(args, assistant):
     )
     if args.execute == "-":
         args.execute = "".join(sys.stdin.readlines())
-    execute(assistant, args.execute)
+    asyncio.run(execute(assistant, args.execute))
 
 
 def run_non_interactive(args, assistant):
@@ -167,7 +168,9 @@ def run_non_interactive(args, assistant):
     if "-" in args.prompt:
         args.prompt[args.prompt.index("-")] = "".join(sys.stdin.readlines())
 
-    simple_response(assistant, "\n".join(args.prompt), stream=not args.no_stream)
+    asyncio.run(
+        simple_response(assistant, "\n".join(args.prompt), stream=not args.no_stream)
+    )
 
 
 class CLIChatSession(ChatSession):
@@ -184,7 +187,7 @@ def run_interactive(args, assistant):
     logging.info("Starting a new chat session. Assistant config: %s", assistant.config)
     session = CLIChatSession(assistant=assistant, markdown=args.markdown)
     input_provider = CLIUserInputProvider()
-    session.loop(input_provider)
+    asyncio.run(session.loop(input_provider))
 
 
 if __name__ == "__main__":

@@ -32,14 +32,14 @@ class CLIResponseStreamer(ResponseStreamer):
         self.markdown = markdown
         self.printer = StreamingMarkdownPrinter(self.console, self.markdown)
 
-    def __enter__(self):
+    async def __aenter__(self):
         self.printer.__enter__()
         return self
 
-    def on_next_token(self, token: str):
+    async def on_next_token(self, token: str):
         self.printer.print(token)
 
-    def __exit__(self, *args):
+    async def __aexit__(self, *args):
         self.printer.__exit__(*args)
 
 
@@ -48,20 +48,20 @@ class CLIChatListener(ChatListener):
         self.markdown = markdown
         self.console = Console()
 
-    def on_chat_start(self):
+    async def on_chat_start(self):
         console = Console(width=80)
         console.print(Markdown(TERMINAL_WELCOME))
 
-    def on_chat_clear(self):
+    async def on_chat_clear(self):
         self.console.print("[bold]Cleared the conversation.[/bold]")
 
-    def on_chat_rerun(self, success: bool):
+    async def on_chat_rerun(self, success: bool):
         if success:
             self.console.print("[bold]Re-running the last message.[/bold]")
         else:
             self.console.print("[bold]Nothing to re-run.[/bold]")
 
-    def on_error(self, e: Exception):
+    async def on_error(self, e: Exception):
         if isinstance(e, InvalidRequestError):
             self.console.print(
                 f"[red]Request Error. The last prompt was not saved: {type(e)}: {e}[/red]"
@@ -83,15 +83,15 @@ class CLIUserInputProvider(UserInputProvider):
     def __init__(self) -> None:
         self.prompt_session = PromptSession[str]()
 
-    def get_user_input(self) -> Tuple[str, ModelOverrides]:
-        while (next_user_input := self._request_input()) == "":
+    async def get_user_input(self) -> Tuple[str, ModelOverrides]:
+        while (next_user_input := await self._request_input()) == "":
             pass
 
         user_input, args = self._parse_input(next_user_input)
         return user_input, args
 
-    def _request_input(self):
-        line = prompt(self.prompt_session)
+    async def _request_input(self):
+        line = await prompt(self.prompt_session)
 
         if line != "\\":
             return line

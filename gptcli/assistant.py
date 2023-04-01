@@ -3,7 +3,7 @@ import sys
 from attr import dataclass
 import openai
 
-from typing import Dict, Iterator, Optional, TypedDict, List
+from typing import AsyncIterator, Dict, Iterator, Optional, TypedDict, List
 
 
 class Message(TypedDict):
@@ -88,10 +88,10 @@ class Assistant:
             param, self.config.get(param, CONFIG_DEFAULTS[param])
         )
 
-    def complete_chat(
+    async def complete_chat(
         self, messages, override_params: ModelOverrides = {}, stream: bool = True
-    ) -> Iterator[str]:
-        response_iter = openai.ChatCompletion.create(
+    ) -> AsyncIterator[str]:
+        response_iter = await openai.ChatCompletion.acreate(
             messages=messages,
             stream=stream,
             model=self._param("model", override_params),
@@ -100,7 +100,7 @@ class Assistant:
         )
 
         if stream:
-            for response in response_iter:
+            async for response in response_iter:
                 next_choice = response["choices"][0]
                 if (
                     next_choice["finish_reason"] is None

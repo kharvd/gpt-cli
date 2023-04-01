@@ -41,7 +41,7 @@ class StreamingMarkdownPrinter:
         self.console.print()
 
 
-def prompt(session: PromptSession[str], multiline=False):
+async def prompt(session: PromptSession[str], multiline=False):
     bindings = KeyBindings()
 
     @bindings.add("c-c")
@@ -66,7 +66,7 @@ def prompt(session: PromptSession[str], multiline=False):
             event.current_buffer.validate_and_handle()
 
     try:
-        return session.prompt(
+        return await session.prompt_async(
             "> " if not multiline else "multiline> ",
             vi_mode=True,
             multiline=multiline,

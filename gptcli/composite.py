@@ -1,3 +1,4 @@
+import asyncio
 from gptcli.assistant import Message
 from gptcli.session import ChatListener, ResponseStreamer
 
@@ -9,45 +10,45 @@ class CompositeResponseStreamer(ResponseStreamer):
     def __init__(self, streamers: List[ResponseStreamer]):
         self.streamers = streamers
 
-    def __enter__(self):
-        for streamer in self.streamers:
-            streamer.__enter__()
+    async def __aenter__(self):
+        await asyncio.gather(*[streamer.__aenter__() for streamer in self.streamers])
         return self
 
-    def on_next_token(self, token: str):
-        for streamer in self.streamers:
-            streamer.on_next_token(token)
+    async def on_next_token(self, token: str):
+        await asyncio.gather(
+            *[streamer.on_next_token(token) for streamer in self.streamers]
+        )
 
-    def __exit__(self, *args):
-        for streamer in self.streamers:
-            streamer.__exit__(*args)
+    async def __aexit__(self, *args):
+        await asyncio.gather(
+            *[streamer.__aexit__(*args) for streamer in self.streamers]
+        )
 
 
 class CompositeChatListener(ChatListener):
     def __init__(self, listeners: List[ChatListener]):
         self.listeners = listeners
 
-    def on_chat_start(self):
-        for listener in self.listeners:
-            listener.on_chat_start()
+    async def on_chat_start(self):
+        await asyncio.gather(*[listener.on_chat_start() for listener in self.listeners])
 
-    def on_chat_clear(self):
-        for listener in self.listeners:
-            listener.on_chat_clear()
+    async def on_chat_clear(self):
+        await asyncio.gather(*[listener.on_chat_clear() for listener in self.listeners])
 
-    def on_chat_rerun(self, success: bool):
-        for listener in self.listeners:
-            listener.on_chat_rerun(success)
+    async def on_chat_rerun(self, success: bool):
+        await asyncio.gather(
+            *[listener.on_chat_rerun(success) for listener in self.listeners]
+        )
 
-    def on_error(self, e: Exception):
-        for listener in self.listeners:
-            listener.on_error(e)
+    async def on_error(self, e: Exception):
+        await asyncio.gather(*[listener.on_error(e) for listener in self.listeners])
 
     def response_streamer(self) -> ResponseStreamer:
         return CompositeResponseStreamer(
             [listener.response_streamer() for listener in self.listeners]
         )
 
-    def on_chat_message(self, message: Message):
-        for listener in self.listeners:
-            listener.on_chat_message(message)
+    async def on_chat_message(self, message: Message):
+        await asyncio.gather(
+            *[listener.on_chat_message(message) for listener in self.listeners]
+        )
