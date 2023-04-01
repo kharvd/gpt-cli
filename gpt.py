@@ -177,14 +177,14 @@ class CLIChatSession(ChatSession):
                 CLIChatListener(markdown),
             ]
         )
-        input_provider = CLIUserInputProvider()
-        super().__init__(assistant, listener, input_provider)
+        super().__init__(assistant, listener)
 
 
 def run_interactive(args, assistant):
     logging.info("Starting a new chat session. Assistant config: %s", assistant.config)
     session = CLIChatSession(assistant=assistant, markdown=args.markdown)
-    session.loop()
+    input_provider = CLIUserInputProvider()
+    session.loop(input_provider)
 
 
 if __name__ == "__main__":

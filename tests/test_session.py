@@ -21,28 +21,21 @@ def setup_listener_mock():
     return listener_mock, response_streamer_mock
 
 
-def setup_input_provider_mock():
-    input_provider_mock = mock.MagicMock()
-    return input_provider_mock
-
-
 def setup_session():
     assistant_mock = setup_assistant_mock()
     listener_mock, _ = setup_listener_mock()
-    input_provider_mock = setup_input_provider_mock()
-    session = ChatSession(assistant_mock, listener_mock, input_provider_mock)
-    return assistant_mock, listener_mock, input_provider_mock, session
+    session = ChatSession(assistant_mock, listener_mock)
+    return assistant_mock, listener_mock, session
 
 
 def test_simple_input():
-    assistant_mock, listener_mock, input_provider_mock, session = setup_session()
+    assistant_mock, listener_mock, session = setup_session()
 
-    user_input = "user message"
-    input_provider_mock.get_user_input.return_value = (user_input, {})
     expected_response = "assistant message"
     assistant_mock.complete_chat.return_value = [expected_response]
 
-    should_continue = session.process_input()
+    user_input = "user message"
+    should_continue = session.process_input(user_input, {})
     assert should_continue
 
     user_message = {"role": "user", "content": user_input}
@@ -57,25 +50,20 @@ def test_simple_input():
 
 
 def test_quit():
-    _, _, input_provider_mock, session = setup_session()
-
-    user_input = "q"
-    input_provider_mock.get_user_input.return_value = (user_input, {})
-
-    should_continue = session.process_input()
+    _, _, session = setup_session()
+    should_continue = session.process_input("q", {})
     assert not should_continue
 
 
 def test_clear():
-    assistant_mock, listener_mock, input_provider_mock, session = setup_session()
+    assistant_mock, listener_mock, session = setup_session()
 
     assistant_mock.init_messages.assert_called_once()
     assistant_mock.init_messages.reset_mock()
 
-    input_provider_mock.get_user_input.return_value = ("user_message", {})
     assistant_mock.complete_chat.return_value = ["assistant_message"]
 
-    should_continue = session.process_input()
+    should_continue = session.process_input("user_message", {})
     assert should_continue
 
     assistant_mock.complete_chat.assert_called_once_with(
@@ -91,20 +79,16 @@ def test_clear():
     assistant_mock.complete_chat.reset_mock()
     listener_mock.on_chat_message.reset_mock()
 
-    user_input = "c"
-    input_provider_mock.get_user_input.return_value = (user_input, {})
-
-    should_continue = session.process_input()
+    should_continue = session.process_input("c", {})
     assert should_continue
 
     assistant_mock.init_messages.assert_called_once()
     listener_mock.on_chat_clear.assert_called_once()
     assistant_mock.complete_chat.assert_not_called()
 
-    input_provider_mock.get_user_input.return_value = ("user_message_1", {})
     assistant_mock.complete_chat.return_value = ["assistant_message_1"]
 
-    should_continue = session.process_input()
+    should_continue = session.process_input("user_message_1", {})
     assert should_continue
 
     assistant_mock.complete_chat.assert_called_once_with(
@@ -120,15 +104,13 @@ def test_clear():
 
 
 def test_rerun():
-    assistant_mock, listener_mock, input_provider_mock, session = setup_session()
+    assistant_mock, listener_mock, session = setup_session()
 
     assistant_mock.init_messages.assert_called_once()
     assistant_mock.init_messages.reset_mock()
 
     # Re-run before any input shouldn't do anything
-    user_input = "r"
-    input_provider_mock.get_user_input.return_value = (user_input, {})
-    should_continue = session.process_input()
+    should_continue = session.process_input("r", {})
     assert should_continue
 
     assistant_mock.init_messages.assert_not_called()
@@ -139,10 +121,9 @@ def test_rerun():
     listener_mock.on_chat_rerun.reset_mock()
 
     # Now proper re-run
-    input_provider_mock.get_user_input.return_value = ("user_message", {})
     assistant_mock.complete_chat.return_value = ["assistant_message"]
 
-    should_continue = session.process_input()
+    should_continue = session.process_input("user_message", {})
     assert should_continue
 
     assistant_mock.complete_chat.assert_called_once_with(
@@ -160,10 +141,7 @@ def test_rerun():
 
     assistant_mock.complete_chat.return_value = ["assistant_message_1"]
 
-    user_input = "r"
-    input_provider_mock.get_user_input.return_value = (user_input, {})
-
-    should_continue = session.process_input()
+    should_continue = session.process_input("r", {})
     assert should_continue
 
     listener_mock.on_chat_rerun.assert_called_once_with(True)
@@ -180,16 +158,15 @@ def test_rerun():
 
 
 def test_args():
-    assistant_mock, listener_mock, input_provider_mock, session = setup_session()
+    assistant_mock, listener_mock, session = setup_session()
 
     assistant_mock.supported_overrides.return_value = ["arg1"]
 
-    user_input = "user message"
-    input_provider_mock.get_user_input.return_value = (user_input, {"arg1": "value1"})
     expected_response = "assistant message"
     assistant_mock.complete_chat.return_value = [expected_response]
 
-    should_continue = session.process_input()
+    user_input = "user message"
+    should_continue = session.process_input(user_input, {"arg1": "value1"})
     assert should_continue
 
     user_message = {"role": "user", "content": user_input}
@@ -208,8 +185,7 @@ def test_args():
 
     assistant_mock.complete_chat.return_value = [expected_response]
 
-    input_provider_mock.get_user_input.return_value = ("r", {})
-    should_continue = session.process_input()
+    should_continue = session.process_input("r", {})
     assert should_continue
 
     assistant_mock.complete_chat.assert_called_once_with(
@@ -219,14 +195,13 @@ def test_args():
 
 
 def test_invalid_request_error():
-    assistant_mock, listener_mock, input_provider_mock, session = setup_session()
+    assistant_mock, listener_mock, session = setup_session()
 
-    user_input = "user message"
-    input_provider_mock.get_user_input.return_value = (user_input, {})
     error = InvalidRequestError("error message", "error details")
     assistant_mock.complete_chat.side_effect = error
 
-    should_continue = session.process_input()
+    user_input = "user message"
+    should_continue = session.process_input(user_input, {})
     assert should_continue
 
     user_message = {"role": "user", "content": user_input}
@@ -238,8 +213,7 @@ def test_invalid_request_error():
     listener_mock.on_chat_message.reset_mock()
     listener_mock.on_error.reset_mock()
 
-    input_provider_mock.get_user_input.return_value = ("r", {})
-    should_continue = session.process_input()
+    should_continue = session.process_input("r", {})
     assert should_continue
 
     assistant_mock.complete_chat.assert_not_called()
@@ -253,14 +227,13 @@ class OpenAITestError(OpenAIError):
 
 
 def test_openai_error():
-    assistant_mock, listener_mock, input_provider_mock, session = setup_session()
+    assistant_mock, listener_mock, session = setup_session()
 
-    user_input = "user message"
-    input_provider_mock.get_user_input.return_value = (user_input, {})
     error = OpenAITestError()
     assistant_mock.complete_chat.side_effect = error
 
-    should_continue = session.process_input()
+    user_input = "user message"
+    should_continue = session.process_input(user_input, {})
     assert should_continue
 
     user_message = {"role": "user", "content": user_input}
@@ -275,8 +248,7 @@ def test_openai_error():
     assistant_mock.complete_chat.side_effect = None
     assistant_mock.complete_chat.return_value = ["assistant message"]
 
-    input_provider_mock.get_user_input.return_value = ("r", {})
-    should_continue = session.process_input()
+    should_continue = session.process_input("r", {})
     assert should_continue
 
     assistant_mock.complete_chat.assert_called_once_with(
@@ -290,14 +262,13 @@ def test_openai_error():
 
 
 def test_stream():
-    assistant_mock, listener_mock, input_provider_mock, session = setup_session()
-    input_provider_mock.get_user_input.return_value = ("user message", {})
+    assistant_mock, listener_mock, session = setup_session()
     assistant_message = "assistant message"
     assistant_mock.complete_chat.return_value = list(assistant_message)
 
     response_streamer_mock = listener_mock.response_streamer.return_value
 
-    session.process_input()
+    session.process_input("user message", {})
 
     response_streamer_mock.assert_has_calls(
         [mock.call.on_next_token(token) for token in assistant_message]

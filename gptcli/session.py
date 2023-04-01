@@ -3,7 +3,7 @@ from abc import abstractmethod
 from gptcli.assistant import Assistant, Message, ModelOverrides
 from gptcli.term_utils import COMMAND_CLEAR, COMMAND_QUIT, COMMAND_RERUN
 from openai import InvalidRequestError, OpenAIError
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 
 class ResponseStreamer:
@@ -53,13 +53,11 @@ class ChatSession:
         self,
         assistant: Assistant,
         listener: ChatListener,
-        input_provider: UserInputProvider,
     ):
         self.assistant = assistant
         self.messages = assistant.init_messages()
         self.user_prompts: List[Tuple[str, ModelOverrides]] = []
         self.listener = listener
-        self.input_provider = input_provider
 
     def _clear(self):
         self.messages = self.assistant.init_messages()
@@ -135,11 +133,10 @@ class ChatSession:
         self.messages = self.messages[:-1]
         self.user_prompts = self.user_prompts[:-1]
 
-    def process_input(self):
+    def process_input(self, user_input: str, args: ModelOverrides):
         """
         Process the user's input and return whether the session should continue.
         """
-        user_input, args = self.input_provider.get_user_input()
         if not self._validate_args(args):
             return True
 
@@ -159,8 +156,7 @@ class ChatSession:
 
         return True
 
-    def loop(self):
+    def loop(self, input_provider: UserInputProvider):
         self.listener.on_chat_start()
-
-        while self.process_input():
+        while self.process_input(*input_provider.get_user_input()):
             pass
