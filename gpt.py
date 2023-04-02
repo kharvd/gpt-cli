@@ -73,14 +73,14 @@ def parse_args(config: GptCliConfig):
         "--log_file",
         type=str,
         default=config.log_file,
-        help=argparse.SUPPRESS,
+        help="The file to write logs to",
     )
     parser.add_argument(
         "--log_level",
         type=str,
         default=config.log_level,
         choices=["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"],
-        help=argparse.SUPPRESS,
+        help="The log level to use",
     )
     parser.add_argument(
         "--prompt",

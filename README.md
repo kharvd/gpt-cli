@@ -49,13 +49,15 @@ Make sure to set the `OPENAI_API_KEY` environment variable to your OpenAI API ke
 
 ```
 usage: gpt.py [-h] [--no_markdown] [--model MODEL] [--temperature TEMPERATURE] [--top_p TOP_P]
+              [--log_file LOG_FILE] [--log_level {DEBUG,INFO,WARNING,ERROR,CRITICAL}]
               [--prompt PROMPT] [--execute EXECUTE] [--no_stream]
               [{dev,general,bash}]
 
 Run a chat session with ChatGPT. See https://github.com/kharvd/gpt-cli for more information.
 
 positional arguments:
-  {dev,general,bash}    The name of assistant to use. `general` (default) is a generally helpful
+  {dev,general,bash}
+                        The name of assistant to use. `general` (default) is a generally helpful
                         assistant, `dev` is a software development assistant with shorter
                         responses. You can specify your own assistants in the config file
                         ~/.gptrc. See the README for more information.
@@ -70,10 +72,14 @@ optional arguments:
                         temperature defined for the assistant.
   --top_p TOP_P         The top_p to use for the chat session. Overrides the default top_p defined
                         for the assistant.
+  --log_file LOG_FILE   The file to write logs to
+  --log_level {DEBUG,INFO,WARNING,ERROR,CRITICAL}
+                        The log level to use
   --prompt PROMPT, -p PROMPT
                         If specified, will not start an interactive chat session and instead will
-                        print the response to standard output and exit. Use `-` to read the prompt
-                        from standard input.
+                        print the response to standard output and exit. May be specified multiple
+                        times. Use `-` to read the prompt from standard input. Implies
+                        --no_markdown.
   --execute EXECUTE, -e EXECUTE
                         If specified, passes the prompt to the assistant and allows the user to
                         edit the produced shell command before executing it. Implies --no_stream.
@@ -109,12 +115,14 @@ This will prompt you to edit the command in your `$EDITOR` it before executing i
 
 ## Configuration
 
-You can configure the assistants in the config file `~/.gptrc`. The file is a YAML file with the following structure:
+You can configure the assistants in the config file `~/.gptrc`. The file is a YAML file with the following structure (see also [config.py](./gptcli/config.py))
 
 ```yaml
 default_assistant: <assistant_name>
 markdown: False
 api_key: <openai_api_key>
+log_file: <path>
+log_level: <DEBUG|INFO|WARNING|ERROR|CRITICAL>
 assistants:
   <assistant_name>:
     model: <model_name>
