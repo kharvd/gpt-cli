@@ -36,7 +36,7 @@ async def init_session(update: Update, context: ContextTypes.DEFAULT_TYPE):
     assistant = init_assistant(AssistantGlobalArgs(assistant_name="general"), {})
     session = ChatSession(assistant, TelegramChatListener(update.message))
     if "messages" in context.user_data:
-        session.messages = context.user_data["messages"]
+        session.set_messages(context.user_data["messages"])
     return session
 
 
