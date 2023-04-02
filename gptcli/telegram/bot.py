@@ -153,13 +153,6 @@ def init_application(persistence: Optional[BasePersistence] = None) -> Applicati
         entry_points=[
             CommandHandler("start", start),
             MessageHandler(filters.TEXT & ~filters.COMMAND, chat_message),
-        ],
-        states={
-            CHAT: [
-                MessageHandler(filters.TEXT & ~filters.COMMAND, chat_message),
-            ],
-        },
-        fallbacks=[
             CommandHandler("clear", clear_command),
             CommandHandler("rerun", rerun_command),
             CommandHandler("model", model_command),
@@ -168,6 +161,8 @@ def init_application(persistence: Optional[BasePersistence] = None) -> Applicati
             CommandHandler("params", params_command),
             CallbackQueryHandler(reply_button_handler),
         ],
+        states={},
+        fallbacks=[],
     )
 
     application.add_handler(conv_handler)
