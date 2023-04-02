@@ -84,6 +84,7 @@ class DynamoDBPersistence(BasePersistence):
 async def handler(event, context):
     application = init_application(DynamoDBPersistence())
     await application.initialize()
+    await application.post_init()
 
     update = Update.de_json(json.loads(event["body"]), application.bot)
     await application.process_update(update)
