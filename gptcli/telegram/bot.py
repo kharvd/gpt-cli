@@ -139,12 +139,7 @@ async def error_handler(update: object, context: ContextTypes.DEFAULT_TYPE) -> N
     logging.error(msg="Exception while handling an update:", exc_info=context.error)
 
 
-def main():
-    logging.basicConfig(
-        level="DEBUG",
-        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-    )
-
+def init_application() -> Application:
     bot = Bot(token=TOKEN)
     application = ApplicationBuilder().bot(bot).post_init(post_init).build()
 
@@ -172,6 +167,9 @@ def main():
     application.add_handler(conv_handler)
     application.add_error_handler(error_handler)
 
+
+def main():
+    application = init_application()
     application.run_polling()
 
 

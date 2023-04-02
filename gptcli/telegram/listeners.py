@@ -1,4 +1,3 @@
-import logging
 from openai import InvalidRequestError, OpenAIError
 from gptcli.session import ChatListener, InvalidArgumentError, ResponseStreamer
 from telegram import Message as TelegramMessage, ReplyKeyboardMarkup
