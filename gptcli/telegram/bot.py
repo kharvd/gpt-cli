@@ -19,7 +19,7 @@ from gptcli.session import (
     ChatSession,
 )
 
-TOKEN = os.environ["TELEGRAM_TOKEN"]
+TOKEN = os.environ["TELEGRAM_API_TOKEN"]
 
 CHAT = range(1)
 
@@ -166,6 +166,7 @@ def init_application() -> Application:
 
     application.add_handler(conv_handler)
     application.add_error_handler(error_handler)
+    return application
 
 
 def main():
