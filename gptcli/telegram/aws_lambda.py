@@ -42,7 +42,7 @@ class DynamoDBPersistence(BasePersistence):
     async def update_user_data(self, user_id: int, data) -> None:
         self.table.put_item(
             Item={
-                "id": user_id,
+                "id": str(user_id),
                 "user_data": data,
             }
         )
@@ -60,7 +60,7 @@ class DynamoDBPersistence(BasePersistence):
         pass
 
     async def drop_user_data(self, user_id: int) -> None:
-        self.table.delete_item(Key={"id": user_id})
+        self.table.delete_item(Key={"id": str(user_id)})
 
     async def refresh_user_data(self, user_id: int, user_data) -> None:
         response = self.table.get_item(Key={"id": str(user_id)})
