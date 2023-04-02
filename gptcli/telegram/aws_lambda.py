@@ -21,6 +21,26 @@ class DynamoDBPersistence(BasePersistence):
         dynamodb = boto3.resource("dynamodb")
         self.table = dynamodb.Table("gptcli")
 
+    async def update_user_data(self, user_id: int, data) -> None:
+        logging.info(f"update_user_data: {user_id}, {data}")
+        self.table.put_item(
+            Item={
+                "id": str(user_id),
+                "user_data": data,
+            }
+        )
+
+    async def drop_user_data(self, user_id: int) -> None:
+        logging.info(f"drop_user_data: {user_id}")
+        self.table.delete_item(Key={"id": str(user_id)})
+
+    async def refresh_user_data(self, user_id: int, user_data) -> None:
+        response = self.table.get_item(Key={"id": str(user_id)})
+        data = response.get("Item", {}).get("user_data", {})
+        logging.info(f"refresh_user_data: {user_id}, {data}")
+        for key, value in data.items():
+            user_data[key] = value
+
     async def get_user_data(self):
         return {}
 
@@ -39,15 +59,6 @@ class DynamoDBPersistence(BasePersistence):
     async def update_conversation(self, name, key, new_state) -> None:
         pass
 
-    async def update_user_data(self, user_id: int, data) -> None:
-        logging.info(f"update_user_data: {user_id}, {data}")
-        self.table.put_item(
-            Item={
-                "id": str(user_id),
-                "user_data": data,
-            }
-        )
-
     async def update_chat_data(self, chat_id: int, data) -> None:
         pass
 
@@ -60,17 +71,6 @@ class DynamoDBPersistence(BasePersistence):
     async def drop_chat_data(self, chat_id: int) -> None:
         pass
 
-    async def drop_user_data(self, user_id: int) -> None:
-        logging.info(f"drop_user_data: {user_id}")
-        self.table.delete_item(Key={"id": str(user_id)})
-
-    async def refresh_user_data(self, user_id: int, user_data) -> None:
-        response = self.table.get_item(Key={"id": str(user_id)})
-        data = response.get("Item", {}).get("user_data", {})
-        logging.info(f"refresh_user_data: {user_id}, {data}")
-        for key, value in data.items():
-            user_data[key] = value
-
     async def refresh_chat_data(self, chat_id: int, chat_data) -> None:
         pass
 
@@ -82,9 +82,6 @@ class DynamoDBPersistence(BasePersistence):
 
 
 async def handler(event, context):
-    logger.info(f"event: {event}")
-    logger.info(f"context: {context}")
-
     application = init_application(DynamoDBPersistence())
     await application.initialize()
 
