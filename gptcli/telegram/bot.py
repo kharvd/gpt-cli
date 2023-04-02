@@ -1,6 +1,6 @@
 import logging
 import os
-from telegram import Bot, Update
+from telegram import Bot, InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.ext import Application
 from telegram.ext import (
     ApplicationBuilder,
@@ -9,6 +9,7 @@ from telegram.ext import (
     MessageHandler,
     filters,
     ConversationHandler,
+    CallbackQueryHandler,
 )
 
 from gptcli.telegram.listeners import TelegramChatListener
@@ -17,16 +18,25 @@ from gptcli.assistant import AssistantGlobalArgs, init_assistant
 from gptcli.session import (
     ChatSession,
 )
-from gptcli.term_utils import COMMAND_CLEAR
 
 TOKEN = os.environ["TELEGRAM_TOKEN"]
 
 CHAT = range(1)
 
 
+REPLY_KEYBOARD = InlineKeyboardMarkup(
+    [
+        [
+            InlineKeyboardButton("🔄", callback_data="rerun"),
+            InlineKeyboardButton("🗑", callback_data="clear"),
+        ],
+    ]
+)
+
+
 def init_session(update: Update):
     assistant = init_assistant(AssistantGlobalArgs(assistant_name="general"), {})
-    return ChatSession(assistant, TelegramChatListener(update.message))
+    return ChatSession(assistant, TelegramChatListener(update.message, REPLY_KEYBOARD))
 
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
@@ -50,7 +60,7 @@ async def chat_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> in
 
     logging.info(f"overrides: {overrides}")
 
-    session.listener = TelegramChatListener(update.message)
+    session.listener = TelegramChatListener(update.message, REPLY_KEYBOARD)
     await session.process_input(text, overrides)
     return CHAT
 
@@ -99,6 +109,16 @@ async def params_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     return CHAT
 
 
+async def reply_button_handler(
+    update: Update, context: ContextTypes.DEFAULT_TYPE
+) -> int:
+    query = update.callback_query
+    query.answer()
+    session = context.user_data["session"]
+    await session.process_input(query.data, {})
+    return CHAT
+
+
 async def post_init(app: Application):
     await app.bot.set_my_commands(
         [
@@ -106,7 +126,7 @@ async def post_init(app: Application):
             ("clear", "Clear the conversation"),
             ("rerun", "Rerun the conversation"),
             ("model", "Set the model"),
-            ("temperature", "Set the temperature"),
+            ("temp", "Set the temperature"),
             ("top_p", "Set the top_p"),
             ("params", "Show the current parameters"),
         ]
@@ -145,6 +165,7 @@ def main():
             CommandHandler("temperature", temperature_command),
             CommandHandler("top_p", top_p_command),
             CommandHandler("params", params_command),
+            CallbackQueryHandler(reply_button_handler),
         ],
     )
 

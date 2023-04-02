@@ -1,21 +1,26 @@
 import logging
 from openai import InvalidRequestError, OpenAIError
 from gptcli.session import ChatListener, InvalidArgumentError, ResponseStreamer
-from telegram import Message as TelegramMessage
+from telegram import Message as TelegramMessage, ReplyKeyboardMarkup
 
 
 class TelegramResponseStreamer(ResponseStreamer):
-    def __init__(self, user_telegram_message: TelegramMessage):
+    def __init__(
+        self, user_telegram_message: TelegramMessage, reply_markup: ReplyKeyboardMarkup
+    ):
         self.user_telegram_message = user_telegram_message
+        self.reply_markup = reply_markup
         self.telegram_message = None
         self.message_buffer = ""
         self.message_text = ""
 
     async def __aenter__(self):
-        self.telegram_message = await self.user_telegram_message.reply_text("...")
+        self.telegram_message = await self.user_telegram_message.reply_text(
+            "...", reply_markup=self.reply_markup
+        )
         return self
 
-    async def _maybe_edit(self) -> None:
+    async def _maybe_edit(self, markdown=False) -> None:
         prev_message = self.message_text.strip()
 
         self.message_text += self.message_buffer
@@ -24,7 +29,11 @@ class TelegramResponseStreamer(ResponseStreamer):
         stripped_message = self.message_text.strip()
 
         if stripped_message != "" and stripped_message != prev_message:
-            await self.telegram_message.edit_text(stripped_message)
+            await self.telegram_message.edit_text(
+                stripped_message,
+                reply_markup=self.reply_markup,
+                parse_mode="Markdown" if markdown else None,
+            )
 
     async def on_next_token(self, token: str):
         self.message_buffer += token
@@ -35,12 +44,15 @@ class TelegramResponseStreamer(ResponseStreamer):
         await self._maybe_edit()
 
     async def __aexit__(self, *args):
-        await self._maybe_edit()
+        await self._maybe_edit(markdown=True)
 
 
 class TelegramChatListener(ChatListener):
-    def __init__(self, user_telegram_message: TelegramMessage):
+    def __init__(
+        self, user_telegram_message: TelegramMessage, reply_markup: ReplyKeyboardMarkup
+    ):
         self.user_telegram_message = user_telegram_message
+        self.reply_markup = reply_markup
 
     async def _send_message(self, text: str):
         await self.user_telegram_message.reply_text(text)
@@ -67,4 +79,4 @@ class TelegramChatListener(ChatListener):
             await self._send_message(f"Error: {type(e)}: {e}")
 
     def response_streamer(self) -> ResponseStreamer:
-        return TelegramResponseStreamer(self.user_telegram_message)
+        return TelegramResponseStreamer(self.user_telegram_message, self.reply_markup)
