@@ -1,6 +1,7 @@
 import logging
 import os
 from typing import Optional
+import openai
 from telegram import Bot, Update
 from telegram.ext import Application
 from telegram.ext import (
@@ -22,7 +23,16 @@ from gptcli.session import (
 )
 
 
-def init_session(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def init_session(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if "openai_api_key" in context.user_data:
+        openai.api_key = context.user_data["openai_api_key"]
+    else:
+        await update.message.reply_text(
+            "Please set the OpenAI API key using the `/token OPENAI_API_KEY` command.",
+            parse_mode="Markdown",
+        )
+        raise Exception("OpenAI API key not set")
+
     assistant = init_assistant(AssistantGlobalArgs(assistant_name="general"), {})
     session = ChatSession(assistant, TelegramChatListener(update.message))
     if "messages" in context.user_data:
@@ -46,7 +56,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def chat_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text = update.message.text
     logging.info(f"update: {update}")
-    session = init_session(update, context)
+    session = await init_session(update, context)
     overrides = context.user_data.get("overrides", {})
     logging.info(f"overrides: {overrides}")
     session.listener = TelegramChatListener(update.message)
@@ -54,12 +64,12 @@ async def chat_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 async def clear_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    session = init_session(update, context)
+    session = await init_session(update, context)
     await process_input(context, session, "clear", {})
 
 
 async def rerun_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    session = init_session(update, context)
+    session = await init_session(update, context)
     await process_input(context, session, "rerun", {})
 
 
@@ -93,10 +103,16 @@ async def params_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(f"Current params: {overrides}")
 
 
+async def token_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    context.user_data["openai_api_key"] = context.args[0]
+    await update.message.reply_text(f"Set token to {context.args[0]}.")
+
+
 async def post_init(app: Application):
     await app.bot.set_my_commands(
         [
             ("start", "Start the conversation"),
+            ("token", "Set OpenAI API token"),
             ("clear", "Clear the conversation"),
             ("rerun", "Rerun the conversation"),
             ("model", "Set the model"),
@@ -127,10 +143,11 @@ def init_application(persistence: Optional[BasePersistence] = None) -> Applicati
         MessageHandler(filters.TEXT & ~filters.COMMAND, chat_message)
     )
     application.add_handler(CommandHandler("start", start))
+    application.add_handler(CommandHandler("token", token_command))
     application.add_handler(CommandHandler("clear", clear_command))
     application.add_handler(CommandHandler("rerun", rerun_command))
     application.add_handler(CommandHandler("model", model_command))
-    application.add_handler(CommandHandler("temperature", temperature_command))
+    application.add_handler(CommandHandler("temp", temperature_command))
     application.add_handler(CommandHandler("top_p", top_p_command))
     application.add_handler(CommandHandler("params", params_command))
 
