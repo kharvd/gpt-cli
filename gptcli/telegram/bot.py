@@ -1,5 +1,6 @@
 import logging
 import os
+from typing import Optional
 from telegram import Bot, InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.ext import Application
 from telegram.ext import (
@@ -10,6 +11,7 @@ from telegram.ext import (
     filters,
     ConversationHandler,
     CallbackQueryHandler,
+    BasePersistence,
 )
 
 from gptcli.telegram.listeners import TelegramChatListener
@@ -34,13 +36,17 @@ REPLY_KEYBOARD = InlineKeyboardMarkup(
 )
 
 
-def init_session(update: Update):
+def init_session(update: Update, context: ContextTypes.DEFAULT_TYPE):
     assistant = init_assistant(AssistantGlobalArgs(assistant_name="general"), {})
-    return ChatSession(assistant, TelegramChatListener(update.message, REPLY_KEYBOARD))
+    session = ChatSession(
+        assistant, TelegramChatListener(update.message, REPLY_KEYBOARD)
+    )
+    if "messages" in context.user_data:
+        session.messages = context.user_data["messages"]
+    return session
 
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-    context.user_data["session"] = init_session(update)
     await update.message.reply_text(
         "Hi! How can I help you today?",
     )
@@ -51,28 +57,22 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
 async def chat_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     text = update.message.text
     logging.info(f"update: {update}")
-    if "session" not in context.user_data:
-        context.user_data["session"] = init_session(update)
-
-    session = context.user_data["session"]
-
+    session = init_session(update, context)
     overrides = context.user_data.get("overrides", {})
-
     logging.info(f"overrides: {overrides}")
-
     session.listener = TelegramChatListener(update.message, REPLY_KEYBOARD)
     await session.process_input(text, overrides)
     return CHAT
 
 
 async def clear_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-    session = context.user_data["session"]
+    session = init_session(update, context)
     await session.process_input("clear", {})
     return CHAT
 
 
 async def rerun_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-    session = context.user_data["session"]
+    session = init_session(update, context)
     await session.process_input("rerun", {})
     return CHAT
 
@@ -114,7 +114,7 @@ async def reply_button_handler(
 ) -> int:
     query = update.callback_query
     query.answer()
-    session = context.user_data["session"]
+    session = init_session(update, context)
     await session.process_input(query.data, {})
     return CHAT
 
@@ -139,9 +139,15 @@ async def error_handler(update: object, context: ContextTypes.DEFAULT_TYPE) -> N
     logging.error(msg="Exception while handling an update:", exc_info=context.error)
 
 
-def init_application() -> Application:
+def init_application(persistence: Optional[BasePersistence] = None) -> Application:
     bot = Bot(token=TOKEN)
-    application = ApplicationBuilder().bot(bot).post_init(post_init).build()
+    application_builder = ApplicationBuilder()
+    application_builder.bot(bot).post_init(post_init)
+
+    if persistence:
+        application_builder.persistence(persistence)
+
+    application = application_builder.build()
 
     conv_handler = ConversationHandler(
         entry_points=[

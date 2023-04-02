@@ -96,7 +96,7 @@ class CLIUserInputProvider(UserInputProvider):
         if line != "\\":
             return line
 
-        return prompt(self.prompt_session, multiline=True)
+        return await prompt(self.prompt_session, multiline=True)
 
     def _parse_input(self, input: str) -> Tuple[str, ModelOverrides]:
         input, args = parse_args(input)

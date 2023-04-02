@@ -59,6 +59,12 @@ class ChatSession:
         self.user_prompts: List[Tuple[str, ModelOverrides]] = []
         self.listener = listener
 
+    def set_messages(self, messages):
+        self.messages = messages
+        self.user_prompts = [
+            (message, {}) for message in messages if message["role"] == "user"
+        ]
+
     async def _clear(self):
         self.messages = self.assistant.init_messages()
         self.user_prompts = []
