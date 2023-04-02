@@ -43,8 +43,10 @@ async def init_session(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def process_input(
     context: ContextTypes.DEFAULT_TYPE, session: ChatSession, text: str, overrides: dict
 ):
-    await session.process_input(text, overrides)
-    context.user_data["messages"] = session.messages
+    try:
+        await session.process_input(text, overrides)
+    finally:
+        context.user_data["messages"] = session.messages
 
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):

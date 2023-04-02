@@ -31,7 +31,7 @@ class TelegramResponseStreamer(ResponseStreamer):
     async def on_next_token(self, token: str):
         self.message_buffer += token
 
-        if len(self.message_buffer) < 10 and token != "":
+        if len(self.message_buffer) < 20 and token != "":
             return
 
         await self._maybe_edit()
