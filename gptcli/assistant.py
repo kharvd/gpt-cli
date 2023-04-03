@@ -2,7 +2,7 @@ import os
 import sys
 from attr import dataclass
 import openai
-
+import platform
 from typing import Dict, Iterator, Optional, TypedDict, List
 
 
@@ -35,7 +35,7 @@ DEFAULT_ASSISTANTS = {
         "messages": [
             {
                 "role": "system",
-                "content": f"You are a helpful assistant who is an expert in software development. You are helping a user who is a software developer. Your responses are short and concise. You include code snippets when appropriate. Code snippets are formatted using Markdown with a correct language tag. User's `uname`: {os.uname()}",
+                "content": f"You are a helpful assistant who is an expert in software development. You are helping a user who is a software developer. Your responses are short and concise. You include code snippets when appropriate. Code snippets are formatted using Markdown with a correct language tag. User's `uname`: {platform.uname()}",
             },
             {
                 "role": "user",
@@ -50,7 +50,7 @@ DEFAULT_ASSISTANTS = {
         "messages": [
             {
                 "role": "system",
-                "content": f"You output only valid and correct shell commands according to the user's prompt. You don't provide any explanations or any other text that is not valid shell commands. User's `uname`: {os.uname()}. User's `$SHELL`: {os.environ.get('SHELL')}.",
+                "content": f"You output only valid and correct shell commands according to the user's prompt. You don't provide any explanations or any other text that is not valid shell commands. User's `uname`: {platform.uname()}. User's `$SHELL`: {os.environ.get('SHELL')}.",
             }
         ],
     },
