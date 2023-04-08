@@ -27,6 +27,11 @@ cd gpt-cli
 pip install -r requirements.txt
 ```
 
+To use this CLI, you need to have an OpenAI API token, and add it as an Enviroment Variable on your
+Operating System.
+
+You can get you OpenAI API token on the [OpenAI Plataform Page](https://platform.openai.com/account/api-keys)
+
 Add the OpenAI API token to your `.bashrc` file (in the root of your home folder).
 In this example we use nano, you can use any text editor.
 
