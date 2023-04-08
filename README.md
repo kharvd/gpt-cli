@@ -40,6 +40,11 @@ nano ~/.bashrc
 export OPENAI_API_KEY=<your_key_here>
 ```
 
+After that, to make the changes to the `.basrc` file take effect without opening another terminal,
+you can run:
+
+    source ~/.bashrc
+
 Run the tool
 
 ```
