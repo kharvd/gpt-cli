@@ -2,7 +2,7 @@ from prompt_toolkit import PromptSession
 from openai import OpenAIError, InvalidRequestError
 from rich.console import Console
 from rich.markdown import Markdown
-from typing import Tuple
+from typing import Any, Dict, Tuple
 from gptcli.session import (
     ChatListener,
     InvalidArgumentError,
@@ -15,13 +15,12 @@ from gptcli.term_utils import (
     parse_args,
     prompt,
 )
-from gptcli.assistant import ModelOverrides
 
 
 TERMINAL_WELCOME = """
 Hi! I'm here to help. Type `q` or Ctrl-D to exit, `c` or Ctrl-C to clear
 the conversation, `r` or Ctrl-R to re-generate the last response. 
-To enter multi-line mode, enter a backslash `\` followed by a new line.
+To enter multi-line mode, enter a backslash `\\` followed by a new line.
 Exit the multi-line mode by pressing ESC and then Enter (Meta+Enter).
 """
 
@@ -83,7 +82,7 @@ class CLIUserInputProvider(UserInputProvider):
     def __init__(self) -> None:
         self.prompt_session = PromptSession[str]()
 
-    def get_user_input(self) -> Tuple[str, ModelOverrides]:
+    def get_user_input(self) -> Tuple[str, Dict[str, Any]]:
         while (next_user_input := self._request_input()) == "":
             pass
 
@@ -98,6 +97,6 @@ class CLIUserInputProvider(UserInputProvider):
 
         return prompt(self.prompt_session, multiline=True)
 
-    def _parse_input(self, input: str) -> Tuple[str, ModelOverrides]:
+    def _parse_input(self, input: str) -> Tuple[str, Dict[str, Any]]:
         input, args = parse_args(input)
         return input, args

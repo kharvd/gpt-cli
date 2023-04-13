@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+from typing import cast
 import openai
 import os
 import argparse
@@ -8,6 +9,7 @@ import logging
 from gptcli.assistant import (
     Assistant,
     DEFAULT_ASSISTANTS,
+    AssistantGlobalArgs,
     init_assistant,
 )
 from gptcli.cli import (
@@ -139,7 +141,7 @@ def main():
         )
         sys.exit(1)
 
-    assistant = init_assistant(args, config.assistants)
+    assistant = init_assistant(cast(AssistantGlobalArgs, args), config.assistants)
 
     if args.prompt is not None:
         run_non_interactive(args, assistant)

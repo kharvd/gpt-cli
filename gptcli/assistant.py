@@ -3,7 +3,7 @@ import sys
 from attr import dataclass
 import openai
 import platform
-from typing import Dict, Iterator, Optional, TypedDict, List
+from typing import Any, Dict, Iterator, Optional, TypedDict, List, cast
 
 
 class Message(TypedDict):
@@ -11,17 +11,17 @@ class Message(TypedDict):
     content: str
 
 
-class ModelOverrides(TypedDict):
+class ModelOverrides(TypedDict, total=False):
     model: str
     temperature: float
     top_p: float
 
 
-class AssistantConfig(TypedDict):
-    messages: Optional[List[Message]]
-    model: Optional[str]
-    temperature: Optional[float]
-    top_p: Optional[float]
+class AssistantConfig(TypedDict, total=False):
+    messages: List[Message]
+    model: str
+    temperature: float
+    top_p: float
 
 
 CONFIG_DEFAULTS = {
@@ -30,7 +30,7 @@ CONFIG_DEFAULTS = {
     "top_p": 1.0,
 }
 
-DEFAULT_ASSISTANTS = {
+DEFAULT_ASSISTANTS: Dict[str, AssistantConfig] = {
     "dev": {
         "messages": [
             {
@@ -75,7 +75,7 @@ class Assistant:
         return cls(config)
 
     def init_messages(self) -> List[Message]:
-        return self.config["messages"][:]
+        return self.config.get("messages", [])[:]
 
     def supported_overrides(self) -> List[str]:
         return ["model", "temperature", "top_p"]
@@ -91,13 +91,13 @@ class Assistant:
     def complete_chat(
         self, messages, override_params: ModelOverrides = {}, stream: bool = True
     ) -> Iterator[str]:
-        response_iter = openai.ChatCompletion.create(
+        response_iter = cast(Any, openai.ChatCompletion.create(
             messages=messages,
             stream=stream,
             model=self._param("model", override_params),
             temperature=float(self._param("temperature", override_params)),
             top_p=float(self._param("top_p", override_params)),
-        )
+        ))
 
         if stream:
             for response in response_iter:

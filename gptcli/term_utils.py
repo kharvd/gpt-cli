@@ -20,7 +20,7 @@ class StreamingMarkdownPrinter:
         self.markdown = markdown
         self.live: Optional[Live] = None
 
-    def __enter__(self):
+    def __enter__(self) -> "StreamingMarkdownPrinter":
         self.live = Live(
             console=self.console, auto_refresh=False, vertical_overflow="visible"
         )
@@ -28,6 +28,7 @@ class StreamingMarkdownPrinter:
         return self
 
     def print(self, text: str):
+        assert self.live
         self.current_text += text
         if self.markdown:
             content = Markdown(self.current_text, style="green")
@@ -37,6 +38,7 @@ class StreamingMarkdownPrinter:
         self.live.refresh()
 
     def __exit__(self, *args):
+        assert self.live
         self.live.__exit__(*args)
         self.console.print()
 
