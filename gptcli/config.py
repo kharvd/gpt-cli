@@ -5,6 +5,10 @@ import yaml
 
 from gptcli.assistant import AssistantConfig
 
+CONFIG_FILE_PATH = os.path.join(
+    os.path.expanduser("~"), ".config", "gpt-cli", "gpt.yml"
+)
+
 
 @dataclass
 class GptCliConfig:

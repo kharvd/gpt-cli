@@ -17,7 +17,7 @@ from gptcli.cli import (
     CLIUserInputProvider,
 )
 from gptcli.composite import CompositeChatListener
-from gptcli.config import GptCliConfig, read_yaml_config
+from gptcli.config import CONFIG_FILE_PATH, GptCliConfig, read_yaml_config
 from gptcli.session import ChatSession
 from gptcli.shell import execute, simple_response
 
@@ -44,7 +44,7 @@ def parse_args(config: GptCliConfig):
         default=config.default_assistant,
         nargs="?",
         choices=[*DEFAULT_ASSISTANTS.keys(), *config.assistants.keys()],
-        help="The name of assistant to use. `general` (default) is a generally helpful assistant, `dev` is a software development assistant with shorter responses. You can specify your own assistants in the config file ~/.gptrc. See the README for more information.",
+        help="The name of assistant to use. `general` (default) is a generally helpful assistant, `dev` is a software development assistant with shorter responses. You can specify your own assistants in the config file ~/.config/gpt-cli/gpt.yml. See the README for more information.",
     )
     parser.add_argument(
         "--no_markdown",
@@ -118,9 +118,10 @@ def validate_args(args):
 
 
 def main():
-    config_path = os.path.expanduser("~/.gptrc")
     config = (
-        read_yaml_config(config_path) if os.path.isfile(config_path) else GptCliConfig()
+        read_yaml_config(CONFIG_FILE_PATH)
+        if os.path.isfile(CONFIG_FILE_PATH)
+        else GptCliConfig()
     )
     args = parse_args(config)
 
@@ -137,7 +138,7 @@ def main():
         openai.api_key = config.api_key
     else:
         print(
-            "No API key found. Please set the OPENAI_API_KEY environment variable or `api_key: <key>` value in ~/.gptrc"
+            "No API key found. Please set the OPENAI_API_KEY environment variable or `api_key: <key>` value in ~/.config/gpt-cli/gpt.yml"
         )
         sys.exit(1)
 
