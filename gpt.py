@@ -154,6 +154,8 @@ def main():
 def run_execute(args, assistant):
     logging.info(
         "Starting a non-interactive execution session with prompt '%s'. Assistant config: %s",
+        args.prompt,
+        assistant.config,
     )
     if args.execute == "-":
         args.execute = "".join(sys.stdin.readlines())
