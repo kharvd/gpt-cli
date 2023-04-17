@@ -34,7 +34,7 @@ You can get you OpenAI API token on the [OpenAI Platform Page](https://platform.
 Add the OpenAI API token to your `.bashrc` file (in the root of your home folder).
 In this example we use nano, you can use any text editor.
 
-```
+```bash
 nano ~/.bashrc
 export OPENAI_API_KEY=<your_key_here>
 ```
@@ -42,11 +42,13 @@ export OPENAI_API_KEY=<your_key_here>
 After that, to make the changes to the `.bashrc` file take effect without opening another terminal,
 you can run:
 
-    source ~/.bashrc
+```bash
+source ~/.bashrc
+```
 
 Run the tool
 
-```
+```bash
 ./gpt.py
 ```
 
@@ -56,7 +58,7 @@ You can also use a `.gptrc` file for configuration. See the [Configuration](READ
 
 Make sure to set the `OPENAI_API_KEY` environment variable to your OpenAI API key (or put it in the `~/.gptrc` file as described below).
 
-```
+```bash
 usage: gpt.py [-h] [--no_markdown] [--model MODEL] [--temperature TEMPERATURE] [--top_p TOP_P]
               [--log_file LOG_FILE] [--log_level {DEBUG,INFO,WARNING,ERROR,CRITICAL}]
               [--prompt PROMPT] [--execute EXECUTE] [--no_stream]
@@ -103,7 +105,7 @@ To enter multi-line mode, enter a backslash `\` followed by a new line. Exit the
 
 You can override the model parameters using `--model`, `--temperature` and `--top_p` arguments at the end of your prompt. For example:
 
-```
+```bash
 > What is the meaning of life? --model gpt-4 --temperature 2.0
 The meaning of life is subjective and can be different for diverse human beings and unique-phil ethics.org/cultuties-/ it that reson/bdstals89im3_jrf334;mvs-bread99ef=g22me
 ```
@@ -162,7 +164,7 @@ assistants:
       - { role: system, content: "You are a pirate." }
 ```
 
-```
+```bash
 $ ./gpt.py pirate
 
 > Arrrr
