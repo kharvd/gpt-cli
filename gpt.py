@@ -200,7 +200,9 @@ class CLIChatSession(ChatSession):
 
 def run_interactive(args, assistant):
     logger.info("Starting a new chat session. Assistant config: %s", assistant.config)
-    session = CLIChatSession(assistant=assistant, markdown=args.markdown, show_price=args.show_price)
+    session = CLIChatSession(
+        assistant=assistant, markdown=args.markdown, show_price=args.show_price
+    )
     input_provider = CLIUserInputProvider()
     session.loop(input_provider)
 

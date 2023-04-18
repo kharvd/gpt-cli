@@ -91,13 +91,16 @@ class Assistant:
     def complete_chat(
         self, messages, override_params: ModelOverrides = {}, stream: bool = True
     ) -> Iterator[str]:
-        response_iter = cast(Any, openai.ChatCompletion.create(
-            messages=messages,
-            stream=stream,
-            model=self._param("model", override_params),
-            temperature=float(self._param("temperature", override_params)),
-            top_p=float(self._param("top_p", override_params)),
-        ))
+        response_iter = cast(
+            Any,
+            openai.ChatCompletion.create(
+                messages=messages,
+                stream=stream,
+                model=self._param("model", override_params),
+                temperature=float(self._param("temperature", override_params)),
+                top_p=float(self._param("top_p", override_params)),
+            ),
+        )
 
         if stream:
             for response in response_iter:

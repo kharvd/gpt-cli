@@ -1,4 +1,3 @@
-
 import logging
 from gptcli.assistant import Message
 from gptcli.session import ChatListener

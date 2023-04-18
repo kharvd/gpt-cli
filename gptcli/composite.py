@@ -52,6 +52,8 @@ class CompositeChatListener(ChatListener):
         for listener in self.listeners:
             listener.on_chat_message(message)
 
-    def on_chat_response(self, messages: List[Message], response: Message, overrides: ModelOverrides):
+    def on_chat_response(
+        self, messages: List[Message], response: Message, overrides: ModelOverrides
+    ):
         for listener in self.listeners:
             listener.on_chat_response(messages, response, overrides)

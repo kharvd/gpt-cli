@@ -36,7 +36,9 @@ class ChatListener:
     def on_chat_message(self, message: Message):
         pass
 
-    def on_chat_response(self, messages: List[Message], response: Message, overrides: ModelOverrides):
+    def on_chat_response(
+        self, messages: List[Message], response: Message, overrides: ModelOverrides
+    ):
         pass
 
 
