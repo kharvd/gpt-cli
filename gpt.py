@@ -18,15 +18,20 @@ from gptcli.cli import (
 )
 from gptcli.composite import CompositeChatListener
 from gptcli.config import CONFIG_FILE_PATH, GptCliConfig, read_yaml_config
+from gptcli.logging import LoggingChatListener
+from gptcli.openai import PriceChatListener
 from gptcli.session import ChatSession
 from gptcli.shell import execute, simple_response
+
+
+logger = logging.getLogger("gptcli")
 
 
 default_exception_handler = sys.excepthook
 
 
 def exception_handler(type, value, traceback):
-    logging.exception("Uncaught exception", exc_info=(type, value, traceback))
+    logger.exception("Uncaught exception", exc_info=(type, value, traceback))
     print("An uncaught exception occurred. Please report this issue on GitHub.")
     default_exception_handler(type, value, traceback)
 
@@ -105,6 +110,13 @@ def parse_args(config: GptCliConfig):
         default=False,
         help="If specified, will not stream the response to standard output. This is useful if you want to use the response in a script. Ignored when the --prompt option is not specified.",
     )
+    parser.add_argument(
+        "--no_price",
+        action="store_false",
+        dest="show_price",
+        help="Disable price logging.",
+        default=config.show_price,
+    )
 
     return parser.parse_args()
 
@@ -153,7 +165,7 @@ def main():
 
 
 def run_execute(args, assistant):
-    logging.info(
+    logger.info(
         "Starting a non-interactive execution session with prompt '%s'. Assistant config: %s",
         args.prompt,
         assistant.config,
@@ -164,7 +176,7 @@ def run_execute(args, assistant):
 
 
 def run_non_interactive(args, assistant):
-    logging.info(
+    logger.info(
         "Starting a non-interactive session with prompt '%s'. Assistant config: %s",
         args.prompt,
         assistant.config,
@@ -176,18 +188,24 @@ def run_non_interactive(args, assistant):
 
 
 class CLIChatSession(ChatSession):
-    def __init__(self, assistant: Assistant, markdown: bool):
-        listener = CompositeChatListener(
-            [
-                CLIChatListener(markdown),
-            ]
-        )
+    def __init__(self, assistant: Assistant, markdown: bool, show_price: bool):
+        listeners = [
+            CLIChatListener(markdown),
+            LoggingChatListener(),
+        ]
+
+        if show_price:
+            listeners.append(PriceChatListener(assistant))
+
+        listener = CompositeChatListener(listeners)
         super().__init__(assistant, listener)
 
 
 def run_interactive(args, assistant):
-    logging.info("Starting a new chat session. Assistant config: %s", assistant.config)
-    session = CLIChatSession(assistant=assistant, markdown=args.markdown)
+    logger.info("Starting a new chat session. Assistant config: %s", assistant.config)
+    session = CLIChatSession(
+        assistant=assistant, markdown=args.markdown, show_price=args.show_price
+    )
     input_provider = CLIUserInputProvider()
     session.loop(input_provider)
 

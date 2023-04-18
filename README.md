@@ -8,6 +8,7 @@ Command-line interface for ChatGPT.
 
 - **Command-Line Interface**: Interact with ChatGPT directly from your terminal.
 - **Model Customization**: Override the default model, temperature, and top_p values for each assistant, giving you fine-grained control over the AI's behavior.
+- **Usage tracking**: Track your API usage with token count and price information.
 - **Keyboard Shortcuts**: Use Ctrl-C, Ctrl-D, and Ctrl-R shortcuts for easier conversation management and input control.
 - **Multi-Line Input**: Enter multi-line mode for more complex queries or conversations.
 - **Markdown Support**: Enable or disable markdown formatting for chat sessions to tailor the output to your preferences.
@@ -99,6 +100,7 @@ optional arguments:
   --no_stream           If specified, will not stream the response to standard output. This is
                         useful if you want to use the response in a script. Ignored when the
                         --prompt option is not specified.
+  --no_price            Disable price logging.
 ```
 
 Type `q` or Ctrl-D to exit, `c` or Ctrl-C to clear the conversation, `r` or Ctrl-R to re-generate the last response.

@@ -14,6 +14,7 @@ CONFIG_FILE_PATH = os.path.join(
 class GptCliConfig:
     default_assistant: str = "general"
     markdown: bool = True
+    show_price: bool = True
     api_key: Optional[str] = os.environ.get("OPENAI_API_KEY")
     log_file: Optional[str] = None
     log_level: str = "INFO"
