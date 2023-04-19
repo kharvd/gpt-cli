@@ -48,7 +48,7 @@ def parse_args(config: GptCliConfig):
         type=str,
         default=config.default_assistant,
         nargs="?",
-        choices=[*DEFAULT_ASSISTANTS.keys(), *config.assistants.keys()],
+        choices=list(set([*DEFAULT_ASSISTANTS.keys(), *config.assistants.keys()])),
         help="The name of assistant to use. `general` (default) is a generally helpful assistant, `dev` is a software development assistant with shorter responses. You can specify your own assistants in the config file ~/.gptrc. See the README for more information.",
     )
     parser.add_argument(
