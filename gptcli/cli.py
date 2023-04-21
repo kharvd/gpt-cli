@@ -98,5 +98,5 @@ class CLIUserInputProvider(UserInputProvider):
         return prompt(self.prompt_session, multiline=True)
 
     def _parse_input(self, input: str) -> Tuple[str, Dict[str, Any]]:
-        input, args = parse_args(input)
+        args = {}
         return input, args
