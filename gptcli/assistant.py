@@ -1,8 +1,9 @@
 import os
+import sys
 from attr import dataclass
 import openai
-
-from typing import Iterator, Optional, TypedDict, List
+import platform
+from typing import Any, Dict, Iterator, Optional, TypedDict, List, cast
 
 
 class Message(TypedDict):
@@ -10,17 +11,17 @@ class Message(TypedDict):
     content: str
 
 
-class ModelOverrides(TypedDict):
+class ModelOverrides(TypedDict, total=False):
     model: str
     temperature: float
     top_p: float
 
 
-class AssistantConfig(TypedDict):
-    messages: Optional[List[Message]]
-    model: Optional[str]
-    temperature: Optional[float]
-    top_p: Optional[float]
+class AssistantConfig(TypedDict, total=False):
+    messages: List[Message]
+    model: str
+    temperature: float
+    top_p: float
 
 
 CONFIG_DEFAULTS = {
@@ -29,12 +30,12 @@ CONFIG_DEFAULTS = {
     "top_p": 1.0,
 }
 
-DEFAULT_ASSISTANTS = {
+DEFAULT_ASSISTANTS: Dict[str, AssistantConfig] = {
     "dev": {
         "messages": [
             {
                 "role": "system",
-                "content": f"You are a helpful assistant who is an expert in software development. You are helping a user who is a software developer. Your responses are short and concise. You include code snippets when appropriate. Code snippets are formatted using Markdown with a correct language tag. User's `uname`: {os.uname()}",
+                "content": f"You are a helpful assistant who is an expert in software development. You are helping a user who is a software developer. Your responses are short and concise. You include code snippets when appropriate. Code snippets are formatted using Markdown with a correct language tag. User's `uname`: {platform.uname()}",
             },
             {
                 "role": "user",
@@ -49,7 +50,7 @@ DEFAULT_ASSISTANTS = {
         "messages": [
             {
                 "role": "system",
-                "content": f"You output only valid and correct shell commands according to the user's prompt. You don't provide any explanations or any other text that is not valid shell commands. User's `uname`: {os.uname()}. User's `$SHELL`: {os.environ.get('SHELL')}.",
+                "content": f"You output only valid and correct shell commands according to the user's prompt. You don't provide any explanations or any other text that is not valid shell commands. User's `uname`: {platform.uname()}. User's `$SHELL`: {os.environ.get('SHELL')}.",
             }
         ],
     },
@@ -62,6 +63,7 @@ class Assistant:
 
     @classmethod
     def from_config(cls, name: str, config: AssistantConfig):
+        config = config.copy()
         if name in DEFAULT_ASSISTANTS:
             # Merge the config with the default config
             # If a key is in both, use the value from the config
@@ -73,12 +75,12 @@ class Assistant:
         return cls(config)
 
     def init_messages(self) -> List[Message]:
-        return self.config["messages"][:]
+        return self.config.get("messages", [])[:]
 
     def supported_overrides(self) -> List[str]:
         return ["model", "temperature", "top_p"]
 
-    def _param(self, param: str, override_params: ModelOverrides) -> float:
+    def _param(self, param: str, override_params: ModelOverrides) -> Any:
         # If the param is in the override_params, use that value
         # Otherwise, use the value from the config
         # Otherwise, use the default value
@@ -89,12 +91,15 @@ class Assistant:
     def complete_chat(
         self, messages, override_params: ModelOverrides = {}, stream: bool = True
     ) -> Iterator[str]:
-        response_iter = openai.ChatCompletion.create(
-            messages=messages,
-            stream=stream,
-            model=self._param("model", override_params),
-            temperature=float(self._param("temperature", override_params)),
-            top_p=float(self._param("top_p", override_params)),
+        response_iter = cast(
+            Any,
+            openai.ChatCompletion.create(
+                messages=messages,
+                stream=stream,
+                model=self._param("model", override_params),
+                temperature=float(self._param("temperature", override_params)),
+                top_p=float(self._param("top_p", override_params)),
+            ),
         )
 
         if stream:
@@ -108,3 +113,33 @@ class Assistant:
         else:
             next_choice = response_iter["choices"][0]
             yield next_choice["message"]["content"]
+
+
+@dataclass
+class AssistantGlobalArgs:
+    assistant_name: str
+    model: Optional[str] = None
+    temperature: Optional[float] = None
+    top_p: Optional[float] = None
+
+
+def init_assistant(
+    args: AssistantGlobalArgs, custom_assistants: Dict[str, AssistantConfig]
+) -> Assistant:
+    name = args.assistant_name
+    if name in custom_assistants:
+        assistant = Assistant.from_config(name, custom_assistants[name])
+    elif name in DEFAULT_ASSISTANTS:
+        assistant = Assistant.from_config(name, DEFAULT_ASSISTANTS[name])
+    else:
+        print(f"Unknown assistant: {name}")
+        sys.exit(1)
+
+    # Override config with command line arguments
+    if args.temperature is not None:
+        assistant.config["temperature"] = args.temperature
+    if args.model is not None:
+        assistant.config["model"] = args.model
+    if args.top_p is not None:
+        assistant.config["top_p"] = args.top_p
+    return assistant
