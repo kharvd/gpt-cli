@@ -40,9 +40,11 @@ class AnthropicCompletionProvider(CompletionProvider):
             "stop_sequences": [anthropic.HUMAN_PROMPT],
             "max_tokens_to_sample": 2048,
             "model": args["model"],
-            "temperature": args["temperature"],
-            "top_p": args["top_p"],
         }
+        if "temperature" in args:
+            kwargs["temperature"] = args["temperature"]
+        if "top_p" in args:
+            kwargs["top_p"] = args["top_p"]
 
         client = get_client()
         if stream:

@@ -9,14 +9,19 @@ class OpenAICompletionProvider(CompletionProvider):
     def complete(
         self, messages: List[Message], args: dict, stream: bool = False
     ) -> Iterator[str]:
+        kwargs = {}
+        if "temperature" in args:
+            kwargs["temperature"] = args["temperature"]
+        if "top_p" in args:
+            kwargs["top_p"] = args["top_p"]
+
         response_iter = cast(
             Any,
             openai.ChatCompletion.create(
                 messages=messages,
                 stream=stream,
                 model=args["model"],
-                temperature=args["temperature"],
-                top_p=args["top_p"],
+                **kwargs,
             ),
         )
 
