@@ -1,4 +1,4 @@
-from gptcli.assistant import Message, ModelOverrides
+from gptcli.completion import Message, ModelOverrides
 from gptcli.session import ChatListener, ResponseStreamer
 
 
