@@ -1,12 +1,12 @@
 # gpt-cli
 
-Command-line interface for ChatGPT.
+Command-line interface for ChatGPT and Claude.
 
 ![screenshot](./screenshot.png)
 
 ## Features
 
-- **Command-Line Interface**: Interact with ChatGPT directly from your terminal.
+- **Command-Line Interface**: Interact with ChatGPT or Claude directly from your terminal.
 - **Model Customization**: Override the default model, temperature, and top_p values for each assistant, giving you fine-grained control over the AI's behavior.
 - **Usage tracking**: Track your API usage with token count and price information.
 - **Keyboard Shortcuts**: Use Ctrl-C, Ctrl-D, and Ctrl-R shortcuts for easier conversation management and input control.
@@ -134,7 +134,8 @@ You can configure the assistants in the config file `~/.config/gpt-cli/gpt.yml`.
 ```yaml
 default_assistant: <assistant_name>
 markdown: False
-api_key: <openai_api_key>
+openai_api_key: <openai_api_key>
+anthropic_api_key: <anthropic_api_key>
 log_file: <path>
 log_level: <DEBUG|INFO|WARNING|ERROR|CRITICAL>
 assistants:
@@ -158,7 +159,7 @@ Example:
 ```yaml
 default_assistant: dev
 markdown: True
-api_key: <openai_api_key>
+openai_api_key: <openai_api_key>
 assistants:
   pirate:
     model: gpt-4
@@ -172,4 +173,24 @@ $ ./gpt.py pirate
 
 > Arrrr
 Ahoy, matey! What be bringing ye to these here waters? Be it treasure or adventure ye seek, we be sailing the high seas together. Ready yer map and compass, for we have a long voyage ahead!
+```
+
+## Anthropic Claude support
+
+To use Claude, you should have an API key from [Anthropic](https://console.anthropic.com/) (currently there is a waitlist for API access). After getting the API key, you can add an environment variable
+
+```bash
+export ANTHROPIC_API_KEY=<your_key_here>
+```
+
+or a config line in `~/.config/gpt-cli/gpt.yml`:
+
+```yaml
+anthropic_api_key: <your_key_here>
+```
+
+Now you should be able to run `gpt.py` with `--model claude-v1` or `--model claude-instant-v1`:
+
+```bash
+./gpt.py --model claude-v1
 ```

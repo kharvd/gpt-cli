@@ -1,20 +1,12 @@
 import os
 import sys
 from attr import dataclass
-import openai
 import platform
-from typing import Any, Dict, Iterator, Optional, TypedDict, List, cast
+from typing import Any, Dict, Iterator, Optional, TypedDict, List
 
-
-class Message(TypedDict):
-    role: str
-    content: str
-
-
-class ModelOverrides(TypedDict, total=False):
-    model: str
-    temperature: float
-    top_p: float
+from gptcli.completion import CompletionProvider, ModelOverrides, Message
+from gptcli.openai import OpenAICompletionProvider
+from gptcli.anthropic import AnthropicCompletionProvider
 
 
 class AssistantConfig(TypedDict, total=False):
@@ -44,7 +36,7 @@ DEFAULT_ASSISTANTS: Dict[str, AssistantConfig] = {
         ],
     },
     "general": {
-        "messages": [{"role": "system", "content": "You are a helpful assistant."}],
+        "messages": [],
     },
     "bash": {
         "messages": [
@@ -55,6 +47,15 @@ DEFAULT_ASSISTANTS: Dict[str, AssistantConfig] = {
         ],
     },
 }
+
+
+def get_completion_provider(model: str) -> CompletionProvider:
+    if model.startswith("gpt"):
+        return OpenAICompletionProvider()
+    elif model.startswith("claude"):
+        return AnthropicCompletionProvider()
+    else:
+        raise ValueError(f"Unknown model: {model}")
 
 
 class Assistant:
@@ -91,28 +92,17 @@ class Assistant:
     def complete_chat(
         self, messages, override_params: ModelOverrides = {}, stream: bool = True
     ) -> Iterator[str]:
-        response_iter = cast(
-            Any,
-            openai.ChatCompletion.create(
-                messages=messages,
-                stream=stream,
-                model=self._param("model", override_params),
-                temperature=float(self._param("temperature", override_params)),
-                top_p=float(self._param("top_p", override_params)),
-            ),
+        model = self._param("model", override_params)
+        completion_provider = get_completion_provider(model)
+        return completion_provider.complete(
+            messages,
+            {
+                "model": model,
+                "temperature": float(self._param("temperature", override_params)),
+                "top_p": float(self._param("top_p", override_params)),
+            },
+            stream,
         )
-
-        if stream:
-            for response in response_iter:
-                next_choice = response["choices"][0]
-                if (
-                    next_choice["finish_reason"] is None
-                    and "content" in next_choice["delta"]
-                ):
-                    yield next_choice["delta"]["content"]
-        else:
-            next_choice = response_iter["choices"][0]
-            yield next_choice["message"]["content"]
 
 
 @dataclass
