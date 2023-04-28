@@ -6,6 +6,7 @@ import argparse
 import sys
 import logging
 
+import gptcli.anthropic
 from gptcli.assistant import (
     Assistant,
     DEFAULT_ASSISTANTS,
@@ -19,7 +20,7 @@ from gptcli.cli import (
 from gptcli.composite import CompositeChatListener
 from gptcli.config import GptCliConfig, read_yaml_config
 from gptcli.logging import LoggingChatListener
-from gptcli.openai import PriceChatListener
+from gptcli.cost import PriceChatListener
 from gptcli.session import ChatSession
 from gptcli.shell import execute, simple_response
 
@@ -147,11 +148,16 @@ def main():
 
     if config.api_key:
         openai.api_key = config.api_key
+    elif config.openai_api_key:
+        openai.api_key = config.openai_api_key
     else:
         print(
             "No API key found. Please set the OPENAI_API_KEY environment variable or `api_key: <key>` value in ~/.gptrc"
         )
         sys.exit(1)
+
+    if config.anthropic_api_key:
+        gptcli.anthropic.api_key = config.anthropic_api_key
 
     assistant = init_assistant(cast(AssistantGlobalArgs, args), config.assistants)
 

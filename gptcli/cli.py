@@ -19,7 +19,7 @@ from gptcli.term_utils import (
 
 TERMINAL_WELCOME = """
 Hi! I'm here to help. Type `q` or Ctrl-D to exit, `c` or Ctrl-C to clear
-the conversation, `r` or Ctrl-R to re-generate the last response. 
+the conversation, `r` or Ctrl-R to re-generate the last response.
 To enter multi-line mode, enter a backslash `\\` followed by a new line.
 Exit the multi-line mode by pressing ESC and then Enter (Meta+Enter).
 """
@@ -30,12 +30,16 @@ class CLIResponseStreamer(ResponseStreamer):
         self.console = console
         self.markdown = markdown
         self.printer = StreamingMarkdownPrinter(self.console, self.markdown)
+        self.first_token = True
 
     def __enter__(self):
         self.printer.__enter__()
         return self
 
     def on_next_token(self, token: str):
+        if self.first_token and token.startswith(" "):
+            token = token[1:]
+        self.first_token = False
         self.printer.print(token)
 
     def __exit__(self, *args):
