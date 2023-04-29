@@ -28,7 +28,7 @@ cd gpt-cli
 pip install -r requirements.txt
 ```
 
-Add the OpenAI API token to your `.bashrc` file (in the root of your home folder).
+Add the OpenAI API key to your `.bashrc` file (in the root of your home folder).
 In this example we use nano, you can use any text editor.
 
 ```
@@ -42,11 +42,23 @@ Run the tool
 ./gpt.py
 ```
 
-You can also use a `.gptrc` file for configuration. See the [Configuration](README.md#Configuration) section below.
+If you want to start the program from anywhere, you might want to create an alias in your `.bashrc`.
+
+```
+alias gpt="/path/to/gpt-cli/gpt.py"
+```
+
+Alternatively, you can create a symbolic link to the executable in a directory that is in your path, like in the following example.
+
+```
+ln -s /path/to/gpt-cli/gpt.py /usr/bin/gpt
+```
+
+You can also use a `gpt.yml` file for configuration. See the [Configuration](README.md#Configuration) section below.
 
 ## Usage
 
-Make sure to set the `OPENAI_API_KEY` environment variable to your OpenAI API key (or put it in the `~/.gptrc` file as described below).
+Make sure to set the `OPENAI_API_KEY` environment variable to your OpenAI API key (or put it in the `~/.config/gpt-cli/gpt.yml` file as described below).
 
 ```
 usage: gpt.py [-h] [--no_markdown] [--model MODEL] [--temperature TEMPERATURE] [--top_p TOP_P]
@@ -61,7 +73,7 @@ positional arguments:
                         The name of assistant to use. `general` (default) is a generally helpful
                         assistant, `dev` is a software development assistant with shorter
                         responses. You can specify your own assistants in the config file
-                        ~/.gptrc. See the README for more information.
+                        ~/.config/gpt-cli/gpt.yml. See the README for more information.
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -117,7 +129,7 @@ This will prompt you to edit the command in your `$EDITOR` it before executing i
 
 ## Configuration
 
-You can configure the assistants in the config file `~/.gptrc`. The file is a YAML file with the following structure (see also [config.py](./gptcli/config.py))
+You can configure the assistants in the config file `~/.config/gpt-cli/gpt.yml`. The file is a YAML file with the following structure (see also [config.py](./gptcli/config.py))
 
 ```yaml
 default_assistant: <assistant_name>
@@ -164,17 +176,21 @@ Ahoy, matey! What be bringing ye to these here waters? Be it treasure or adventu
 ```
 
 ## Anthropic Claude support
+
 To use Claude, you should have an API key from [Anthropic](https://console.anthropic.com/) (currently there is a waitlist for API access). After getting the API key, you can add an environment variable
+
 ```bash
 export ANTHROPIC_API_KEY=<your_key_here>
 ```
-or a config line in `~/.gptrc`:
+
+or a config line in `~/.config/gpt-cli/gpt.yml`:
+
 ```yaml
 anthropic_api_key: <your_key_here>
 ```
 
 Now you should be able to run `gpt.py` with `--model claude-v1` or `--model claude-instant-v1`:
+
 ```bash
 ./gpt.py --model claude-v1
 ```
-

@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 from typing import cast
 import openai
-import os
 import argparse
 import sys
 import logging
@@ -18,7 +17,12 @@ from gptcli.cli import (
     CLIUserInputProvider,
 )
 from gptcli.composite import CompositeChatListener
-from gptcli.config import GptCliConfig, read_yaml_config
+from gptcli.config import (
+    CONFIG_FILE_PATHS,
+    GptCliConfig,
+    choose_config_file,
+    read_yaml_config,
+)
 from gptcli.logging import LoggingChatListener
 from gptcli.cost import PriceChatListener
 from gptcli.session import ChatSession
@@ -50,7 +54,7 @@ def parse_args(config: GptCliConfig):
         default=config.default_assistant,
         nargs="?",
         choices=list(set([*DEFAULT_ASSISTANTS.keys(), *config.assistants.keys()])),
-        help="The name of assistant to use. `general` (default) is a generally helpful assistant, `dev` is a software development assistant with shorter responses. You can specify your own assistants in the config file ~/.gptrc. See the README for more information.",
+        help="The name of assistant to use. `general` (default) is a generally helpful assistant, `dev` is a software development assistant with shorter responses. You can specify your own assistants in the config file ~/.config/gpt-cli/gpt.yml. See the README for more information.",
     )
     parser.add_argument(
         "--no_markdown",
@@ -131,10 +135,11 @@ def validate_args(args):
 
 
 def main():
-    config_path = os.path.expanduser("~/.gptrc")
-    config = (
-        read_yaml_config(config_path) if os.path.isfile(config_path) else GptCliConfig()
-    )
+    config_file_path = choose_config_file(CONFIG_FILE_PATHS)
+    if config_file_path:
+        config = read_yaml_config(config_file_path)
+    else:
+        config = GptCliConfig()
     args = parse_args(config)
 
     if args.log_file is not None:
@@ -152,7 +157,7 @@ def main():
         openai.api_key = config.openai_api_key
     else:
         print(
-            "No API key found. Please set the OPENAI_API_KEY environment variable or `api_key: <key>` value in ~/.gptrc"
+            "No API key found. Please set the OPENAI_API_KEY environment variable or `api_key: <key>` value in ~/.config/gpt-cli/gpt.yml"
         )
         sys.exit(1)
 
@@ -172,6 +177,8 @@ def main():
 def run_execute(args, assistant):
     logger.info(
         "Starting a non-interactive execution session with prompt '%s'. Assistant config: %s",
+        args.prompt,
+        assistant.config,
     )
     if args.execute == "-":
         args.execute = "".join(sys.stdin.readlines())

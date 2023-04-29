@@ -1,9 +1,14 @@
 import os
-from typing import Dict, Optional
+from typing import Dict, List, Optional
 from attr import dataclass
 import yaml
 
 from gptcli.assistant import AssistantConfig
+
+CONFIG_FILE_PATHS = [
+    os.path.join(os.path.expanduser("~"), ".config", "gpt-cli", "gpt.yml"),
+    os.path.join(os.path.expanduser("~"), ".gptrc"),
+]
 
 
 @dataclass
@@ -18,6 +23,13 @@ class GptCliConfig:
     log_level: str = "INFO"
     assistants: Dict[str, AssistantConfig] = {}
     interactive: Optional[bool] = None
+
+
+def choose_config_file(paths: List[str]) -> str:
+    for path in paths:
+        if os.path.isfile(path):
+            return path
+    return ""
 
 
 def read_yaml_config(file_path: str) -> GptCliConfig:
