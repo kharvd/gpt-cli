@@ -166,7 +166,6 @@ def main():
         gptcli.anthropic.api_key = config.anthropic_api_key
 
     if config.llama_config is not None:
-        print(config.llama_config)
         init_llama_models(
             config.llama_config["llama_cpp_dir"], config.llama_config["models"]
         )
