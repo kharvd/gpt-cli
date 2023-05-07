@@ -23,6 +23,8 @@ def num_tokens_from_messages(messages: List[Message], model: str) -> int:
         return num_tokens_from_messages_openai(messages, model)
     elif model.startswith("claude"):
         return num_tokens_from_messages_anthropic(messages, model)
+    elif model.startswith("llama"):
+        return 0
     else:
         raise ValueError(f"Unknown model: {model}")
 
@@ -32,6 +34,8 @@ def num_tokens_from_completion(message: Message, model: str) -> int:
         return num_tokens_from_completion_openai(message, model)
     elif model.startswith("claude"):
         return num_tokens_from_completion_anthropic(message, model)
+    elif model.startswith("llama"):
+        return 0
     else:
         raise ValueError(f"Unknown model: {model}")
 
@@ -74,6 +78,10 @@ PRICE_PER_TOKEN = {
     "claude-v1.3": CLAUDE_V1_PRICE_PER_TOKEN,
     "claude-instant-v1": CLAUDE_INSTANT_V1_PRICE_PER_TOKEN,
     "claude-instant-v1.0": CLAUDE_INSTANT_V1_PRICE_PER_TOKEN,
+    "llama": {
+        "prompt": 0,
+        "response": 0,
+    },
 }
 
 

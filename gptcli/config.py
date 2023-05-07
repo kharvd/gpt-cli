@@ -1,5 +1,5 @@
 import os
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, TypedDict
 from attr import dataclass
 import yaml
 
@@ -9,6 +9,11 @@ CONFIG_FILE_PATHS = [
     os.path.join(os.path.expanduser("~"), ".config", "gpt-cli", "gpt.yml"),
     os.path.join(os.path.expanduser("~"), ".gptrc"),
 ]
+
+
+class LLaMAConfig(TypedDict):
+    llama_cpp_dir: str
+    models: Dict[str, str]  # name -> path
 
 
 @dataclass
@@ -23,6 +28,7 @@ class GptCliConfig:
     log_level: str = "INFO"
     assistants: Dict[str, AssistantConfig] = {}
     interactive: Optional[bool] = None
+    llama_config: Optional[LLaMAConfig] = None
 
 
 def choose_config_file(paths: List[str]) -> str:

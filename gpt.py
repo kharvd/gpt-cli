@@ -23,6 +23,7 @@ from gptcli.config import (
     choose_config_file,
     read_yaml_config,
 )
+from gptcli.llama import init_llama_models
 from gptcli.logging import LoggingChatListener
 from gptcli.cost import PriceChatListener
 from gptcli.session import ChatSession
@@ -163,6 +164,11 @@ def main():
 
     if config.anthropic_api_key:
         gptcli.anthropic.api_key = config.anthropic_api_key
+
+    if config.llama_config is not None:
+        init_llama_models(
+            config.llama_config["llama_cpp_dir"], config.llama_config["models"]
+        )
 
     assistant = init_assistant(cast(AssistantGlobalArgs, args), config.assistants)
 
