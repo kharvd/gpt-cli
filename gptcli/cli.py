@@ -1,19 +1,22 @@
+import re
 from prompt_toolkit import PromptSession
+from prompt_toolkit.history import FileHistory
 from openai import OpenAIError, InvalidRequestError
+from prompt_toolkit.key_binding import KeyBindings, KeyPressEvent
 from rich.console import Console
+from rich.live import Live
 from rich.markdown import Markdown
-from typing import Any, Dict, Tuple
+from typing import Any, Dict, Optional, Tuple
+
+from rich.text import Text
 from gptcli.session import (
+    COMMAND_CLEAR,
+    COMMAND_QUIT,
+    COMMAND_RERUN,
     ChatListener,
     InvalidArgumentError,
     ResponseStreamer,
     UserInputProvider,
-)
-
-from gptcli.term_utils import (
-    StreamingMarkdownPrinter,
-    parse_args,
-    prompt,
 )
 
 
@@ -23,6 +26,38 @@ the conversation, `r` or Ctrl-R to re-generate the last response.
 To enter multi-line mode, enter a backslash `\\` followed by a new line.
 Exit the multi-line mode by pressing ESC and then Enter (Meta+Enter).
 """
+
+
+class StreamingMarkdownPrinter:
+    def __init__(self, console: Console, markdown: bool):
+        self.console = console
+        self.current_text = ""
+        self.markdown = markdown
+        self.live: Optional[Live] = None
+
+    def __enter__(self) -> "StreamingMarkdownPrinter":
+        if self.markdown:
+            self.live = Live(
+                console=self.console, auto_refresh=False, vertical_overflow="visible"
+            )
+            self.live.__enter__()
+        return self
+
+    def print(self, text: str):
+        self.current_text += text
+        if self.markdown:
+            assert self.live
+            content = Markdown(self.current_text, style="green")
+            self.live.update(content)
+            self.live.refresh()
+        else:
+            self.console.print(Text(text, style="green"), end="")
+
+    def __exit__(self, *args):
+        if self.markdown:
+            assert self.live
+            self.live.__exit__(*args)
+        self.console.print()
 
 
 class CLIResponseStreamer(ResponseStreamer):
@@ -82,9 +117,29 @@ class CLIChatListener(ChatListener):
         return CLIResponseStreamer(self.console, self.markdown)
 
 
+def parse_args(input: str) -> Tuple[str, Dict[str, Any]]:
+    args = {}
+    regex = r"--(\w+)(?:\s+|=)([^\s]+)"
+    matches = re.findall(regex, input)
+    if matches:
+        args = dict(matches)
+        input = input.split("--")[0].strip()
+
+    return input, args
+
+
+class CLIFileHistory(FileHistory):
+    def append_string(self, string: str) -> None:
+        if string in [*COMMAND_CLEAR, *COMMAND_QUIT, *COMMAND_RERUN]:
+            return
+        return super().append_string(string)
+
+
 class CLIUserInputProvider(UserInputProvider):
-    def __init__(self) -> None:
-        self.prompt_session = PromptSession[str]()
+    def __init__(self, history_filename) -> None:
+        self.prompt_session = PromptSession[str](
+            history=CLIFileHistory(history_filename)
+        )
 
     def get_user_input(self) -> Tuple[str, Dict[str, Any]]:
         while (next_user_input := self._request_input()) == "":
@@ -93,13 +148,48 @@ class CLIUserInputProvider(UserInputProvider):
         user_input, args = self._parse_input(next_user_input)
         return user_input, args
 
+    def prompt(self, multiline=False):
+        bindings = KeyBindings()
+
+        @bindings.add("c-c")
+        def _(event: KeyPressEvent):
+            if len(event.current_buffer.text) == 0 and not multiline:
+                event.current_buffer.text = COMMAND_CLEAR[0]
+                event.current_buffer.validate_and_handle()
+            else:
+                event.app.exit(exception=KeyboardInterrupt, style="class:aborting")
+
+        @bindings.add("c-d")
+        def _(event: KeyPressEvent):
+            if len(event.current_buffer.text) == 0:
+                if not multiline:
+                    event.current_buffer.text = COMMAND_QUIT[0]
+                event.current_buffer.validate_and_handle()
+
+        @bindings.add("c-r")
+        def _(event: KeyPressEvent):
+            if len(event.current_buffer.text) == 0:
+                event.current_buffer.text = COMMAND_RERUN[0]
+                event.current_buffer.validate_and_handle()
+
+        try:
+            return self.prompt_session.prompt(
+                "> " if not multiline else "multiline> ",
+                vi_mode=True,
+                multiline=multiline,
+                enable_open_in_editor=True,
+                key_bindings=bindings,
+            )
+        except KeyboardInterrupt:
+            return ""
+
     def _request_input(self):
-        line = prompt(self.prompt_session)
+        line = self.prompt()
 
         if line != "\\":
             return line
 
-        return prompt(self.prompt_session, multiline=True)
+        return self.prompt(multiline=True)
 
     def _parse_input(self, input: str) -> Tuple[str, Dict[str, Any]]:
         input, args = parse_args(input)

@@ -2,7 +2,6 @@ from abc import abstractmethod
 from typing_extensions import TypeGuard
 from gptcli.assistant import Assistant
 from gptcli.completion import Message, ModelOverrides
-from gptcli.term_utils import COMMAND_CLEAR, COMMAND_QUIT, COMMAND_RERUN
 from openai import InvalidRequestError, OpenAIError
 from typing import Any, Dict, List, Tuple
 
@@ -52,6 +51,12 @@ class UserInputProvider:
 class InvalidArgumentError(Exception):
     def __init__(self, message: str):
         self.message = message
+
+
+COMMAND_CLEAR = ("clear", "c")
+COMMAND_QUIT = ("quit", "q")
+COMMAND_RERUN = ("rerun", "r")
+ALL_COMMANDS = [*COMMAND_CLEAR, *COMMAND_QUIT, *COMMAND_RERUN]
 
 
 class ChatSession:

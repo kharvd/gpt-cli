@@ -1,4 +1,4 @@
-from gptcli.term_utils import parse_args
+from gptcli.cli import parse_args
 
 
 def test_parse_args():

@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+import os
 from typing import cast
 import openai
 import argparse
@@ -222,7 +223,9 @@ def run_interactive(args, assistant):
     session = CLIChatSession(
         assistant=assistant, markdown=args.markdown, show_price=args.show_price
     )
-    input_provider = CLIUserInputProvider()
+    history_filename = os.path.expanduser("~/.config/gpt-cli/history")
+    os.makedirs(os.path.dirname(history_filename), exist_ok=True)
+    input_provider = CLIUserInputProvider(history_filename=history_filename)
     session.loop(input_provider)
 
 
