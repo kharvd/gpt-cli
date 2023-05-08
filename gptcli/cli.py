@@ -10,6 +10,7 @@ from typing import Any, Dict, Optional, Tuple
 
 from rich.text import Text
 from gptcli.session import (
+    ALL_COMMANDS,
     COMMAND_CLEAR,
     COMMAND_QUIT,
     COMMAND_RERUN,
@@ -130,7 +131,7 @@ def parse_args(input: str) -> Tuple[str, Dict[str, Any]]:
 
 class CLIFileHistory(FileHistory):
     def append_string(self, string: str) -> None:
-        if string in [*COMMAND_CLEAR, *COMMAND_QUIT, *COMMAND_RERUN]:
+        if string in ALL_COMMANDS:
             return
         return super().append_string(string)
 
