@@ -25,6 +25,8 @@ def num_tokens_from_messages(messages: List[Message], model: str) -> int:
         return num_tokens_from_messages_anthropic(messages, model)
     elif model.startswith("llama"):
         return 0
+    elif model.startswith("chat-bison"):
+        return 0  # TODO
     else:
         raise ValueError(f"Unknown model: {model}")
 
@@ -36,6 +38,8 @@ def num_tokens_from_completion(message: Message, model: str) -> int:
         return num_tokens_from_completion_anthropic(message, model)
     elif model.startswith("llama"):
         return 0
+    elif model.startswith("chat-bison"):
+        return 0  # TODO
     else:
         raise ValueError(f"Unknown model: {model}")
 
@@ -87,12 +91,25 @@ PRICE_PER_TOKEN = {
 }
 
 
+def price_per_token(model: str, prompt: bool) -> float:
+    if model.startswith("gpt"):
+        return PRICE_PER_TOKEN[model]["prompt" if prompt else "response"]
+    elif model.startswith("claude"):
+        return PRICE_PER_TOKEN[model]["prompt" if prompt else "response"]
+    elif model.startswith("llama"):
+        return 0
+    elif model.startswith("chat-bison"):
+        return 0  # TODO
+    else:
+        raise ValueError(f"Unknown model: {model}")
+
+
 def price_for_completion(messages: List[Message], response: Message, model: str):
     num_tokens_prompt = num_tokens_from_messages(messages, model)
     num_tokens_response = num_tokens_from_completion(response, model)
     return (
-        PRICE_PER_TOKEN[model]["prompt"] * num_tokens_prompt
-        + PRICE_PER_TOKEN[model]["response"] * num_tokens_response
+        price_per_token(model, prompt=True) * num_tokens_prompt
+        + price_per_token(model, prompt=False) * num_tokens_response
     )
 
 

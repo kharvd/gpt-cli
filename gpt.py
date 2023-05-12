@@ -5,7 +5,7 @@ import openai
 import argparse
 import sys
 import logging
-
+import google.generativeai as genai
 import gptcli.anthropic
 from gptcli.assistant import (
     Assistant,
@@ -165,6 +165,9 @@ def main():
 
     if config.anthropic_api_key:
         gptcli.anthropic.api_key = config.anthropic_api_key
+
+    if config.google_api_key:
+        genai.configure(api_key=config.google_api_key)
 
     if config.llama_config is not None:
         init_llama_models(
