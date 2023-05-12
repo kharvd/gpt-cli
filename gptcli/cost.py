@@ -77,6 +77,7 @@ PRICE_PER_TOKEN = {
     "claude-v1.0": CLAUDE_V1_PRICE_PER_TOKEN,
     "claude-v1.2": CLAUDE_V1_PRICE_PER_TOKEN,
     "claude-v1.3": CLAUDE_V1_PRICE_PER_TOKEN,
+    "claude-v1.3-100k": CLAUDE_V1_PRICE_PER_TOKEN,
     "claude-instant-v1": CLAUDE_INSTANT_V1_PRICE_PER_TOKEN,
     "claude-instant-v1-100k": CLAUDE_INSTANT_V1_PRICE_PER_TOKEN,
     "claude-instant-v1.0": CLAUDE_INSTANT_V1_PRICE_PER_TOKEN,
