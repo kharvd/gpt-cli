@@ -5,6 +5,7 @@ import platform
 from typing import Any, Dict, Iterator, Optional, TypedDict, List
 
 from gptcli.completion import CompletionProvider, ModelOverrides, Message
+from gptcli.google import GoogleCompletionProvider
 from gptcli.llama import LLaMACompletionProvider
 from gptcli.openai import OpenAICompletionProvider
 from gptcli.anthropic import AnthropicCompletionProvider
@@ -34,6 +35,10 @@ DEFAULT_ASSISTANTS: Dict[str, AssistantConfig] = {
                 "role": "user",
                 "content": "Your responses must be short and concise. Do not include explanations unless asked.",
             },
+            {
+                "role": "assistant",
+                "content": "Understood.",
+            },
         ],
     },
     "general": {
@@ -57,6 +62,8 @@ def get_completion_provider(model: str) -> CompletionProvider:
         return AnthropicCompletionProvider()
     elif model.startswith("llama"):
         return LLaMACompletionProvider()
+    elif model.startswith("chat-bison"):
+        return GoogleCompletionProvider()
     else:
         raise ValueError(f"Unknown model: {model}")
 
