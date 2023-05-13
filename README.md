@@ -1,6 +1,6 @@
 # gpt-cli
 
-Command-line interface for ChatGPT and Claude.
+Command-line interface for ChatGPT Claude and Bard.
 
 ![screenshot](./screenshot.png)
 
@@ -175,7 +175,9 @@ $ ./gpt.py pirate
 Ahoy, matey! What be bringing ye to these here waters? Be it treasure or adventure ye seek, we be sailing the high seas together. Ready yer map and compass, for we have a long voyage ahead!
 ```
 
-## Anthropic Claude support
+## Other chat bots
+
+### Anthropic Claude
 
 To use Claude, you should have an API key from [Anthropic](https://console.anthropic.com/) (currently there is a waitlist for API access). After getting the API key, you can add an environment variable
 
@@ -193,4 +195,20 @@ Now you should be able to run `gpt.py` with `--model claude-v1` or `--model clau
 
 ```bash
 ./gpt.py --model claude-v1
+```
+
+### Google Bard (PaLM 2)
+Similar to Claude, set the Google API key
+
+```bash
+export GOOGLE_API_KEY=<your_key_here>
+```
+or a config line:
+```yaml
+google_api_key: <your_key_here>
+```
+
+Run `gpt.py` with the correct model:
+```bash
+./gpt.py --model chat-bison-001
 ```
