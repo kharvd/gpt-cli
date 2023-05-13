@@ -35,6 +35,10 @@ DEFAULT_ASSISTANTS: Dict[str, AssistantConfig] = {
                 "role": "user",
                 "content": "Your responses must be short and concise. Do not include explanations unless asked.",
             },
+            {
+                "role": "assistant",
+                "content": "Understood.",
+            },
         ],
     },
     "general": {
