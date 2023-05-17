@@ -48,7 +48,8 @@ sys.excepthook = exception_handler
 
 def parse_args(config: GptCliConfig):
     parser = argparse.ArgumentParser(
-        description="Run a chat session with ChatGPT. See https://github.com/kharvd/gpt-cli for more information."
+        prog="gpt",
+        description="Run a chat session with ChatGPT. See https://github.com/kharvd/gpt-cli for more information.",
     )
     parser.add_argument(
         "assistant_name",
