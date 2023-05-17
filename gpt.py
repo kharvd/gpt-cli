@@ -1,13 +1,16 @@
 #!/usr/bin/env python
-import openai
 import os
+from typing import cast
+import openai
 import argparse
 import sys
 import logging
 
+import gptcli.anthropic
 from gptcli.assistant import (
     Assistant,
     DEFAULT_ASSISTANTS,
+    AssistantGlobalArgs,
     init_assistant,
 )
 from gptcli.cli import (
@@ -15,16 +18,27 @@ from gptcli.cli import (
     CLIUserInputProvider,
 )
 from gptcli.composite import CompositeChatListener
-from gptcli.config import GptCliConfig, read_yaml_config
+from gptcli.config import (
+    CONFIG_FILE_PATHS,
+    GptCliConfig,
+    choose_config_file,
+    read_yaml_config,
+)
+from gptcli.llama import init_llama_models
+from gptcli.logging import LoggingChatListener
+from gptcli.cost import PriceChatListener
 from gptcli.session import ChatSession
 from gptcli.shell import execute, simple_response
+
+
+logger = logging.getLogger("gptcli")
 
 
 default_exception_handler = sys.excepthook
 
 
 def exception_handler(type, value, traceback):
-    logging.exception("Uncaught exception", exc_info=(type, value, traceback))
+    logger.exception("Uncaught exception", exc_info=(type, value, traceback))
     print("An uncaught exception occurred. Please report this issue on GitHub.")
     default_exception_handler(type, value, traceback)
 
@@ -41,8 +55,8 @@ def parse_args(config: GptCliConfig):
         type=str,
         default=config.default_assistant,
         nargs="?",
-        choices=[*DEFAULT_ASSISTANTS.keys(), *config.assistants.keys()],
-        help="The name of assistant to use. `general` (default) is a generally helpful assistant, `dev` is a software development assistant with shorter responses. You can specify your own assistants in the config file ~/.gptrc. See the README for more information.",
+        choices=list(set([*DEFAULT_ASSISTANTS.keys(), *config.assistants.keys()])),
+        help="The name of assistant to use. `general` (default) is a generally helpful assistant, `dev` is a software development assistant with shorter responses. You can specify your own assistants in the config file ~/.config/gpt-cli/gpt.yml. See the README for more information.",
     )
     parser.add_argument(
         "--no_markdown",
@@ -103,6 +117,13 @@ def parse_args(config: GptCliConfig):
         default=False,
         help="If specified, will not stream the response to standard output. This is useful if you want to use the response in a script. Ignored when the --prompt option is not specified.",
     )
+    parser.add_argument(
+        "--no_price",
+        action="store_false",
+        dest="show_price",
+        help="Disable price logging.",
+        default=config.show_price,
+    )
 
     return parser.parse_args()
 
@@ -116,10 +137,11 @@ def validate_args(args):
 
 
 def main():
-    config_path = os.path.expanduser("~/.gptrc")
-    config = (
-        read_yaml_config(config_path) if os.path.isfile(config_path) else GptCliConfig()
-    )
+    config_file_path = choose_config_file(CONFIG_FILE_PATHS)
+    if config_file_path:
+        config = read_yaml_config(config_file_path)
+    else:
+        config = GptCliConfig()
     args = parse_args(config)
 
     if args.log_file is not None:
@@ -133,13 +155,23 @@ def main():
 
     if config.api_key:
         openai.api_key = config.api_key
+    elif config.openai_api_key:
+        openai.api_key = config.openai_api_key
     else:
         print(
-            "No API key found. Please set the OPENAI_API_KEY environment variable or `api_key: <key>` value in ~/.gptrc"
+            "No API key found. Please set the OPENAI_API_KEY environment variable or `api_key: <key>` value in ~/.config/gpt-cli/gpt.yml"
         )
         sys.exit(1)
 
-    assistant = init_assistant(args, config.assistants)
+    if config.anthropic_api_key:
+        gptcli.anthropic.api_key = config.anthropic_api_key
+
+    if config.llama_config is not None:
+        init_llama_models(
+            config.llama_config["llama_cpp_dir"], config.llama_config["models"]
+        )
+
+    assistant = init_assistant(cast(AssistantGlobalArgs, args), config.assistants)
 
     if args.prompt is not None:
         run_non_interactive(args, assistant)
@@ -150,8 +182,10 @@ def main():
 
 
 def run_execute(args, assistant):
-    logging.info(
+    logger.info(
         "Starting a non-interactive execution session with prompt '%s'. Assistant config: %s",
+        args.prompt,
+        assistant.config,
     )
     if args.execute == "-":
         args.execute = "".join(sys.stdin.readlines())
@@ -159,7 +193,7 @@ def run_execute(args, assistant):
 
 
 def run_non_interactive(args, assistant):
-    logging.info(
+    logger.info(
         "Starting a non-interactive session with prompt '%s'. Assistant config: %s",
         args.prompt,
         assistant.config,
@@ -171,19 +205,27 @@ def run_non_interactive(args, assistant):
 
 
 class CLIChatSession(ChatSession):
-    def __init__(self, assistant: Assistant, markdown: bool):
-        listener = CompositeChatListener(
-            [
-                CLIChatListener(markdown),
-            ]
-        )
+    def __init__(self, assistant: Assistant, markdown: bool, show_price: bool):
+        listeners = [
+            CLIChatListener(markdown),
+            LoggingChatListener(),
+        ]
+
+        if show_price:
+            listeners.append(PriceChatListener(assistant))
+
+        listener = CompositeChatListener(listeners)
         super().__init__(assistant, listener)
 
 
 def run_interactive(args, assistant):
-    logging.info("Starting a new chat session. Assistant config: %s", assistant.config)
-    session = CLIChatSession(assistant=assistant, markdown=args.markdown)
-    input_provider = CLIUserInputProvider()
+    logger.info("Starting a new chat session. Assistant config: %s", assistant.config)
+    session = CLIChatSession(
+        assistant=assistant, markdown=args.markdown, show_price=args.show_price
+    )
+    history_filename = os.path.expanduser("~/.config/gpt-cli/history")
+    os.makedirs(os.path.dirname(history_filename), exist_ok=True)
+    input_provider = CLIUserInputProvider(history_filename=history_filename)
     session.loop(input_provider)
 
 

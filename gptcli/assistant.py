@@ -1,27 +1,20 @@
 import os
 import sys
 from attr import dataclass
-import openai
 import platform
-from typing import Dict, Iterator, Optional, TypedDict, List
+from typing import Any, Dict, Iterator, Optional, TypedDict, List
+
+from gptcli.completion import CompletionProvider, ModelOverrides, Message
+from gptcli.llama import LLaMACompletionProvider
+from gptcli.openai import OpenAICompletionProvider
+from gptcli.anthropic import AnthropicCompletionProvider
 
 
-class Message(TypedDict):
-    role: str
-    content: str
-
-
-class ModelOverrides(TypedDict):
+class AssistantConfig(TypedDict, total=False):
+    messages: List[Message]
     model: str
     temperature: float
     top_p: float
-
-
-class AssistantConfig(TypedDict):
-    messages: Optional[List[Message]]
-    model: Optional[str]
-    temperature: Optional[float]
-    top_p: Optional[float]
 
 
 CONFIG_DEFAULTS = {
@@ -30,7 +23,7 @@ CONFIG_DEFAULTS = {
     "top_p": 1.0,
 }
 
-DEFAULT_ASSISTANTS = {
+DEFAULT_ASSISTANTS: Dict[str, AssistantConfig] = {
     "dev": {
         "messages": [
             {
@@ -44,7 +37,7 @@ DEFAULT_ASSISTANTS = {
         ],
     },
     "general": {
-        "messages": [{"role": "system", "content": "You are a helpful assistant."}],
+        "messages": [],
     },
     "bash": {
         "messages": [
@@ -55,6 +48,17 @@ DEFAULT_ASSISTANTS = {
         ],
     },
 }
+
+
+def get_completion_provider(model: str) -> CompletionProvider:
+    if model.startswith("gpt"):
+        return OpenAICompletionProvider()
+    elif model.startswith("claude"):
+        return AnthropicCompletionProvider()
+    elif model.startswith("llama"):
+        return LLaMACompletionProvider()
+    else:
+        raise ValueError(f"Unknown model: {model}")
 
 
 class Assistant:
@@ -75,12 +79,12 @@ class Assistant:
         return cls(config)
 
     def init_messages(self) -> List[Message]:
-        return self.config["messages"][:]
+        return self.config.get("messages", [])[:]
 
     def supported_overrides(self) -> List[str]:
         return ["model", "temperature", "top_p"]
 
-    def _param(self, param: str, override_params: ModelOverrides) -> float:
+    def _param(self, param: str, override_params: ModelOverrides) -> Any:
         # If the param is in the override_params, use that value
         # Otherwise, use the value from the config
         # Otherwise, use the default value
@@ -91,25 +95,17 @@ class Assistant:
     def complete_chat(
         self, messages, override_params: ModelOverrides = {}, stream: bool = True
     ) -> Iterator[str]:
-        response_iter = openai.ChatCompletion.create(
-            messages=messages,
-            stream=stream,
-            model=self._param("model", override_params),
-            temperature=float(self._param("temperature", override_params)),
-            top_p=float(self._param("top_p", override_params)),
+        model = self._param("model", override_params)
+        completion_provider = get_completion_provider(model)
+        return completion_provider.complete(
+            messages,
+            {
+                "model": model,
+                "temperature": float(self._param("temperature", override_params)),
+                "top_p": float(self._param("top_p", override_params)),
+            },
+            stream,
         )
-
-        if stream:
-            for response in response_iter:
-                next_choice = response["choices"][0]
-                if (
-                    next_choice["finish_reason"] is None
-                    and "content" in next_choice["delta"]
-                ):
-                    yield next_choice["delta"]["content"]
-        else:
-            next_choice = response_iter["choices"][0]
-            yield next_choice["message"]["content"]
 
 
 @dataclass

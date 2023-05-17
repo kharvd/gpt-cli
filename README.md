@@ -1,13 +1,14 @@
 # gpt-cli
 
-Command-line interface for ChatGPT.
+Command-line interface for ChatGPT and Claude.
 
 ![screenshot](./screenshot.png)
 
 ## Features
 
-- **Command-Line Interface**: Interact with ChatGPT directly from your terminal.
+- **Command-Line Interface**: Interact with ChatGPT or Claude directly from your terminal.
 - **Model Customization**: Override the default model, temperature, and top_p values for each assistant, giving you fine-grained control over the AI's behavior.
+- **Usage tracking**: Track your API usage with token count and price information.
 - **Keyboard Shortcuts**: Use Ctrl-C, Ctrl-D, and Ctrl-R shortcuts for easier conversation management and input control.
 - **Multi-Line Input**: Enter multi-line mode for more complex queries or conversations.
 - **Markdown Support**: Enable or disable markdown formatting for chat sessions to tailor the output to your preferences.
@@ -21,7 +22,7 @@ At present, the simplest way is to clone the repository to your machine and then
 
 This install assumes a Linux/OSX machine with python and pip available.
 
-```bash
+```
 git clone https://github.com/kharvd/gpt-cli
 cd gpt-cli
 pip install -r requirements.txt
@@ -34,7 +35,7 @@ You can get you OpenAI API token on the [OpenAI Platform Page](https://platform.
 Add the OpenAI API token to your `.bashrc` file (in the root of your home folder).
 In this example we use nano, you can use any text editor.
 
-```bash
+```
 nano ~/.bashrc
 export OPENAI_API_KEY=<your_key_here>
 ```
@@ -42,23 +43,35 @@ export OPENAI_API_KEY=<your_key_here>
 After that, to make the changes to the `.bashrc` file take effect without opening another terminal,
 you can run:
 
-```bash
+```
 source ~/.bashrc
 ```
 
 Run the tool
 
-```bash
+```
 ./gpt.py
 ```
 
-You can also use a `.gptrc` file for configuration. See the [Configuration](README.md#Configuration) section below.
+If you want to start the program from anywhere, you might want to create an alias in your `.bashrc`.
+
+```
+alias gpt="/path/to/gpt-cli/gpt.py"
+```
+
+Alternatively, you can create a symbolic link to the executable in a directory that is in your path, like in the following example.
+
+```
+ln -s /path/to/gpt-cli/gpt.py /usr/bin/gpt
+```
+
+You can also use a `gpt.yml` file for configuration. See the [Configuration](README.md#Configuration) section below.
 
 ## Usage
 
-Make sure to set the `OPENAI_API_KEY` environment variable to your OpenAI API key (or put it in the `~/.gptrc` file as described below).
+Make sure to set the `OPENAI_API_KEY` environment variable to your OpenAI API key (or put it in the `~/.config/gpt-cli/gpt.yml` file as described below).
 
-```bash
+```
 usage: gpt.py [-h] [--no_markdown] [--model MODEL] [--temperature TEMPERATURE] [--top_p TOP_P]
               [--log_file LOG_FILE] [--log_level {DEBUG,INFO,WARNING,ERROR,CRITICAL}]
               [--prompt PROMPT] [--execute EXECUTE] [--no_stream]
@@ -71,7 +84,7 @@ positional arguments:
                         The name of assistant to use. `general` (default) is a generally helpful
                         assistant, `dev` is a software development assistant with shorter
                         responses. You can specify your own assistants in the config file
-                        ~/.gptrc. See the README for more information.
+                        ~/.config/gpt-cli/gpt.yml. See the README for more information.
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -98,6 +111,7 @@ optional arguments:
   --no_stream           If specified, will not stream the response to standard output. This is
                         useful if you want to use the response in a script. Ignored when the
                         --prompt option is not specified.
+  --no_price            Disable price logging.
 ```
 
 Type `q` or Ctrl-D to exit, `c` or Ctrl-C to clear the conversation, `r` or Ctrl-R to re-generate the last response.
@@ -105,20 +119,20 @@ To enter multi-line mode, enter a backslash `\` followed by a new line. Exit the
 
 You can override the model parameters using `--model`, `--temperature` and `--top_p` arguments at the end of your prompt. For example:
 
-```bash
+```
 > What is the meaning of life? --model gpt-4 --temperature 2.0
 The meaning of life is subjective and can be different for diverse human beings and unique-phil ethics.org/cultuties-/ it that reson/bdstals89im3_jrf334;mvs-bread99ef=g22me
 ```
 
 The `dev` assistant is instructed to be an expert in software development and provide short responses.
 
-```bash
+```
 $ ./gpt.py dev
 ```
 
 The `bash` assistant is instructed to be an expert in bash scripting and provide only bash commands. Use the `--execute` option to execute the commands. It works best with the `gpt-4` model.
 
-```bash
+```
 ./gpt.py bash -e "How do I list files in a directory?"
 ```
 
@@ -126,12 +140,13 @@ This will prompt you to edit the command in your `$EDITOR` it before executing i
 
 ## Configuration
 
-You can configure the assistants in the config file `~/.gptrc`. The file is a YAML file with the following structure (see also [config.py](./gptcli/config.py))
+You can configure the assistants in the config file `~/.config/gpt-cli/gpt.yml`. The file is a YAML file with the following structure (see also [config.py](./gptcli/config.py))
 
 ```yaml
 default_assistant: <assistant_name>
 markdown: False
-api_key: <openai_api_key>
+openai_api_key: <openai_api_key>
+anthropic_api_key: <anthropic_api_key>
 log_file: <path>
 log_level: <DEBUG|INFO|WARNING|ERROR|CRITICAL>
 assistants:
@@ -155,7 +170,7 @@ Example:
 ```yaml
 default_assistant: dev
 markdown: True
-api_key: <openai_api_key>
+openai_api_key: <openai_api_key>
 assistants:
   pirate:
     model: gpt-4
@@ -164,9 +179,29 @@ assistants:
       - { role: system, content: "You are a pirate." }
 ```
 
-```bash
+```
 $ ./gpt.py pirate
 
 > Arrrr
 Ahoy, matey! What be bringing ye to these here waters? Be it treasure or adventure ye seek, we be sailing the high seas together. Ready yer map and compass, for we have a long voyage ahead!
+```
+
+## Anthropic Claude support
+
+To use Claude, you should have an API key from [Anthropic](https://console.anthropic.com/) (currently there is a waitlist for API access). After getting the API key, you can add an environment variable
+
+```
+export ANTHROPIC_API_KEY=<your_key_here>
+```
+
+or a config line in `~/.config/gpt-cli/gpt.yml`:
+
+```yaml
+anthropic_api_key: <your_key_here>
+```
+
+Now you should be able to run `gpt.py` with `--model claude-v1` or `--model claude-instant-v1`:
+
+```
+./gpt.py --model claude-v1
 ```
