@@ -169,10 +169,8 @@ def main():
     if config.google_api_key:
         genai.configure(api_key=config.google_api_key)
 
-    if config.llama_config is not None:
-        init_llama_models(
-            config.llama_config["llama_cpp_dir"], config.llama_config["models"]
-        )
+    if config.llama_models is not None:
+        init_llama_models(config.llama_models)
 
     assistant = init_assistant(cast(AssistantGlobalArgs, args), config.assistants)
 

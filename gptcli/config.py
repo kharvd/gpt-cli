@@ -11,11 +11,6 @@ CONFIG_FILE_PATHS = [
 ]
 
 
-class LLaMAConfig(TypedDict):
-    llama_cpp_dir: str
-    models: Dict[str, str]  # name -> path
-
-
 @dataclass
 class GptCliConfig:
     default_assistant: str = "general"
@@ -29,7 +24,7 @@ class GptCliConfig:
     log_level: str = "INFO"
     assistants: Dict[str, AssistantConfig] = {}
     interactive: Optional[bool] = None
-    llama_config: Optional[LLaMAConfig] = None
+    llama_models: Optional[Dict[str, str]] = None
 
 
 def choose_config_file(paths: List[str]) -> str:
