@@ -1,45 +1,51 @@
 import os
-from pathlib import Path
 import sys
-from typing import Iterator, List, Optional
-from llama_cpp import Llama
+from typing import Iterator, List, Optional, TypedDict, cast
+from llama_cpp import Completion, CompletionChunk, Llama
 
 from gptcli.completion import CompletionProvider, Message
 
-LLAMA_MODELS: Optional[dict[str, str]] = None
+
+class LLaMAModelConfig(TypedDict):
+    path: str
+    human_prompt: str
+    assistant_prompt: str
 
 
-def init_llama_models(model_paths: dict[str, str]):
-    for name, path in model_paths.items():
-        if not os.path.isfile(path):
-            print(f"LLaMA model {name} not found at {path}.")
+LLAMA_MODELS: Optional[dict[str, LLaMAModelConfig]] = None
+
+
+def init_llama_models(models: dict[str, LLaMAModelConfig]):
+    for name, model_config in models.items():
+        if not os.path.isfile(model_config["path"]):
+            print(f"LLaMA model {name} not found at {model_config['path']}.")
             sys.exit(1)
         if not name.startswith("llama"):
             print(f"LLaMA model names must start with `llama`, but got `{name}`.")
             sys.exit(1)
 
     global LLAMA_MODELS
-    LLAMA_MODELS = model_paths
+    LLAMA_MODELS = models
 
 
-def role_to_name(role: str) -> str:
+def role_to_name(role: str, model_config: LLaMAModelConfig) -> str:
     if role == "system" or role == "user":
-        return "### Human: "
+        return model_config["human_prompt"]
     elif role == "assistant":
-        return "### Assistant: "
+        return model_config["assistant_prompt"]
     else:
         raise ValueError(f"Unknown role: {role}")
 
 
-def make_prompt(messages: List[Message]) -> str:
+def make_prompt(messages: List[Message], model_config: LLaMAModelConfig) -> str:
     prompt = "\n".join(
-        [f"{role_to_name(message['role'])}{message['content']}" for message in messages]
+        [
+            f"{role_to_name(message['role'], model_config)} {message['content']}"
+            for message in messages
+        ]
     )
-    prompt += "### Assistant:"
+    prompt += f"\n{model_config['assistant_prompt']}"
     return prompt
-
-
-END_SEQ = "### Human:"
 
 
 class LLaMACompletionProvider(CompletionProvider):
@@ -48,14 +54,17 @@ class LLaMACompletionProvider(CompletionProvider):
     ) -> Iterator[str]:
         assert LLAMA_MODELS, "LLaMA models not initialized"
 
+        model_config = LLAMA_MODELS[args["model"]]
+
         with suppress_stderr():
             llm = Llama(
-                model_path=LLAMA_MODELS[args["model"]],
+                model_path=model_config["path"],
                 n_ctx=2048,
                 verbose=False,
                 use_mlock=True,
             )
-        prompt = make_prompt(messages)
+        prompt = make_prompt(messages, model_config)
+        print(prompt)
 
         extra_args = {}
         if "temperature" in args:
@@ -66,16 +75,16 @@ class LLaMACompletionProvider(CompletionProvider):
         gen = llm.create_completion(
             prompt,
             max_tokens=1024,
-            stop=END_SEQ,
+            stop=model_config["human_prompt"],
             stream=stream,
             echo=False,
             **extra_args,
         )
         if stream:
-            for x in gen:
+            for x in cast(Iterator[CompletionChunk], gen):
                 yield x["choices"][0]["text"]
         else:
-            yield gen["choices"][0]["text"]
+            yield cast(Completion, gen)["choices"][0]["text"]
 
 
 # https://stackoverflow.com/a/50438156

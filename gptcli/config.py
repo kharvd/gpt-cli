@@ -4,6 +4,8 @@ from attr import dataclass
 import yaml
 
 from gptcli.assistant import AssistantConfig
+from gptcli.llama import LLaMAModelConfig
+
 
 CONFIG_FILE_PATHS = [
     os.path.join(os.path.expanduser("~"), ".config", "gpt-cli", "gpt.yml"),
@@ -24,7 +26,7 @@ class GptCliConfig:
     log_level: str = "INFO"
     assistants: Dict[str, AssistantConfig] = {}
     interactive: Optional[bool] = None
-    llama_models: Optional[Dict[str, str]] = None
+    llama_models: Optional[Dict[str, LLaMAModelConfig]] = None
 
 
 def choose_config_file(paths: List[str]) -> str:
