@@ -45,8 +45,13 @@ def num_tokens_from_completion(message: Message, model: str) -> int:
 
 
 GPT_3_5_TURBO_PRICE_PER_TOKEN = {
-    "prompt": 0.002 / 1000,
+    "prompt": 0.0015 / 1000,
     "response": 0.002 / 1000,
+}
+
+GPT_3_5_TURBO_16K_PRICE_PER_TOKEN = {
+    "prompt": 0.003 / 1000,
+    "response": 0.004 / 1000,
 }
 
 GPT_4_PRICE_PER_TOKEN = {
@@ -72,10 +77,15 @@ CLAUDE_INSTANT_V1_PRICE_PER_TOKEN = {
 PRICE_PER_TOKEN = {
     "gpt-3.5-turbo": GPT_3_5_TURBO_PRICE_PER_TOKEN,
     "gpt-3.5-turbo-0301": GPT_3_5_TURBO_PRICE_PER_TOKEN,
+    "gpt-3.5-turbo-0613": GPT_3_5_TURBO_PRICE_PER_TOKEN,
+    "gpt-3.5-turbo-16k": GPT_3_5_TURBO_16K_PRICE_PER_TOKEN,
+    "gpt-3.5-turbo-16k-0613": GPT_3_5_TURBO_16K_PRICE_PER_TOKEN,
     "gpt-4": GPT_4_PRICE_PER_TOKEN,
     "gpt-4-0314": GPT_4_PRICE_PER_TOKEN,
+    "gpt-4-0613": GPT_4_PRICE_PER_TOKEN,
     "gpt-4-32k": GPT_4_32K_PRICE_PER_TOKEN,
     "gpt-4-32k-0314": GPT_4_32K_PRICE_PER_TOKEN,
+    "gpt-4-32k-0613": GPT_4_32K_PRICE_PER_TOKEN,
     "claude-v1": CLAUDE_V1_PRICE_PER_TOKEN,
     "claude-v1-100k": CLAUDE_V1_PRICE_PER_TOKEN,
     "claude-v1.0": CLAUDE_V1_PRICE_PER_TOKEN,
