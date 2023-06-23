@@ -6,6 +6,8 @@ Command-line interface for ChatGPT Claude and Bard.
 
 ## Features
 
+### **Coming soon** - Code Interpreter support https://github.com/kharvd/gpt-cli/pull/37
+
 - **Command-Line Interface**: Interact with ChatGPT or Claude directly from your terminal.
 - **Model Customization**: Override the default model, temperature, and top_p values for each assistant, giving you fine-grained control over the AI's behavior.
 - **Usage tracking**: Track your API usage with token count and price information.
