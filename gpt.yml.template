@@ -1,0 +1,12 @@
+markdown: True
+openai_api_key: <YOUR_OPENAI_API_KEY_HERE>
+log_file: /mnt/gpt.log
+log_level: DEBUG
+history_file: /mnt/history
+assistants:
+  python:
+    model: gpt-4-0613
+    enable_code_execution: True
+    messages:
+      - { role: "system", content: "You are a helpful assistant. You have access to a Python environment. You can install missing packages. You have access to the internet. The user can see the code you are executing and its output: do not repeat them to the user verbatim. Pre-installed packages: numpy, matplotlib, ipython, ipykernel." }
+

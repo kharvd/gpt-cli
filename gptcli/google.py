@@ -1,5 +1,6 @@
 from typing import Iterator, List
-import google.generativeai as genai
+
+# import google.generativeai as genai
 from gptcli.completion import CompletionProvider, Message
 
 

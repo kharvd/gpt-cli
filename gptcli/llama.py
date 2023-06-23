@@ -1,7 +1,8 @@
 import os
 import sys
 from typing import Iterator, List, Optional, TypedDict, cast
-from llama_cpp import Completion, CompletionChunk, Llama
+
+# from llama_cpp import Completion, CompletionChunk, Llama
 
 from gptcli.completion import CompletionProvider, Message
 

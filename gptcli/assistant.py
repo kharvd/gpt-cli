@@ -4,7 +4,7 @@ from attr import dataclass
 import platform
 from typing import Any, Dict, Iterator, Optional, TypedDict, List
 
-from gptcli.completion import CompletionProvider, ModelOverrides, Message
+from gptcli.completion import Completion, CompletionProvider, ModelOverrides, Message
 from gptcli.google import GoogleCompletionProvider
 from gptcli.llama import LLaMACompletionProvider
 from gptcli.openai import OpenAICompletionProvider
@@ -16,12 +16,14 @@ class AssistantConfig(TypedDict, total=False):
     model: str
     temperature: float
     top_p: float
+    enable_code_execution: bool
 
 
 CONFIG_DEFAULTS = {
     "model": "gpt-3.5-turbo",
     "temperature": 0.7,
     "top_p": 1.0,
+    "enable_code_execution": False,
 }
 
 DEFAULT_ASSISTANTS: Dict[str, AssistantConfig] = {
@@ -89,7 +91,7 @@ class Assistant:
         return self.config.get("messages", [])[:]
 
     def supported_overrides(self) -> List[str]:
-        return ["model", "temperature", "top_p"]
+        return ["model", "temperature", "top_p", "enable_code_execution"]
 
     def _param(self, param: str, override_params: ModelOverrides) -> Any:
         # If the param is in the override_params, use that value
@@ -101,9 +103,15 @@ class Assistant:
 
     def complete_chat(
         self, messages, override_params: ModelOverrides = {}, stream: bool = True
-    ) -> Iterator[str]:
+    ) -> Iterator[Completion]:
         model = self._param("model", override_params)
         completion_provider = get_completion_provider(model)
+
+        enable_code_execution = (
+            bool(self._param("enable_code_execution", override_params))
+            and os.environ.get("GPTCLI_ALLOW_CODE_EXECUTION") == "1"
+        )
+
         return completion_provider.complete(
             messages,
             {
@@ -112,6 +120,7 @@ class Assistant:
                 "top_p": float(self._param("top_p", override_params)),
             },
             stream,
+            enable_code_execution,
         )
 
 

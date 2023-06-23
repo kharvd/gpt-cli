@@ -21,4 +21,6 @@ class LoggingChatListener(ChatListener):
         self.logger.exception(e)
 
     def on_chat_message(self, message: Message):
-        self.logger.info(f"{message['role']}: {message['content']}")
+        self.logger.info(
+            f"{message['role']}: '{message.get('content')}', function_call={message.get('function_call')}"
+        )
