@@ -1,8 +1,6 @@
 from abc import abstractmethod
-import logging
 import json
 import traceback
-import base64
 from typing_extensions import TypeGuard
 from gptcli.assistant import Assistant
 from gptcli.completion import FunctionCall, Message, ModelOverrides, merge_dicts
@@ -98,7 +96,7 @@ class ChatSession:
         self._respond(args)
 
     def _completion(self, args: ModelOverrides):
-        next_message = {
+        next_message: Message = {
             "role": "",
         }
         finish_reason = None
@@ -113,9 +111,6 @@ class ChatSession:
                     next_message = merge_dicts(next_message, completion["delta"])
                     stream.on_message_delta(completion["delta"])
                     finish_reason = completion["finish_reason"]
-
-                if next_message.get("function_call") is not None:
-                    logging.debug(f"Function call: {next_message['function_call']}")
         except KeyboardInterrupt:
             # If the user interrupts the chat completion, we'll just return what we have so far
             pass

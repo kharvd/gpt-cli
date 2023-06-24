@@ -91,7 +91,7 @@ Calling function:
             self.live.refresh()
         else:
             self.console.print(
-                Text(message_delta.get("content", ""), style="green"), end=""
+                Text(message_delta.get("content") or "", style="green"), end=""
             )
 
     def __exit__(self, *args):

@@ -1,4 +1,5 @@
 from abc import abstractmethod
+import logging
 from typing import Iterator, List, Optional, TypedDict
 from typing_extensions import Required
 
@@ -15,7 +16,7 @@ class Message(TypedDict, total=False):
     function_call: FunctionCall
 
 
-def merge_dicts(a: dict, b: dict):
+def merge_dicts(a, b):
     """
     Given two nested dicts with string values, merge dict `b` into dict `a`, concatenating
     string values.
@@ -43,6 +44,33 @@ class CompletionDelta(TypedDict):
 class Completion(TypedDict):
     delta: Message
     finish_reason: Optional[str]
+
+
+def make_completion(
+    content_delta: str,
+    role: str = "assistant",
+    finish_reason: Optional[str] = None,
+) -> Completion:
+    delta: Message = {
+        "role": role,
+        "content": content_delta,
+    }
+    return {
+        "delta": delta,
+        "finish_reason": finish_reason,
+    }
+
+
+def make_completion_iter(
+    content_iter: Iterator[str],
+    role: str = "assistant",
+    finish_reason: Optional[str] = "stop",
+) -> Iterator[Completion]:
+    logging.debug("make_completion_iter")
+    yield make_completion("", role=role)
+    for content in content_iter:
+        yield make_completion(content, role="")
+    yield make_completion("", role="", finish_reason=finish_reason)
 
 
 class CompletionProvider:

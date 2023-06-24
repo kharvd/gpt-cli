@@ -1,9 +1,16 @@
+import logging
 import os
 import sys
 from typing import Iterator, List, Optional, TypedDict, cast
-from llama_cpp import Completion, CompletionChunk, Llama
+from llama_cpp import Completion as LlamaCompletion, CompletionChunk, Llama
 
-from gptcli.completion import CompletionProvider, Message
+from gptcli.completion import (
+    CompletionProvider,
+    Message,
+    Completion,
+    make_completion,
+    make_completion_iter,
+)
 
 
 class LLaMAModelConfig(TypedDict):
@@ -40,7 +47,7 @@ def role_to_name(role: str, model_config: LLaMAModelConfig) -> str:
 def make_prompt(messages: List[Message], model_config: LLaMAModelConfig) -> str:
     prompt = "\n".join(
         [
-            f"{role_to_name(message['role'], model_config)} {message['content']}"
+            f"{role_to_name(message['role'], model_config)} {message.get('content', '')}"
             for message in messages
         ]
     )
@@ -50,9 +57,16 @@ def make_prompt(messages: List[Message], model_config: LLaMAModelConfig) -> str:
 
 class LLaMACompletionProvider(CompletionProvider):
     def complete(
-        self, messages: List[Message], args: dict, stream: bool = False
-    ) -> Iterator[str]:
+        self,
+        messages: List[Message],
+        args: dict,
+        stream: bool = False,
+        enable_code_execution: bool = False,
+    ) -> Iterator[Completion]:
         assert LLAMA_MODELS, "LLaMA models not initialized"
+
+        if enable_code_execution:
+            raise ValueError("Code execution is not supported by LLaMA models")
 
         model_config = LLAMA_MODELS[args["model"]]
 
@@ -64,7 +78,6 @@ class LLaMACompletionProvider(CompletionProvider):
                 use_mlock=True,
             )
         prompt = make_prompt(messages, model_config)
-        print(prompt)
 
         extra_args = {}
         if "temperature" in args:
@@ -80,11 +93,19 @@ class LLaMACompletionProvider(CompletionProvider):
             echo=False,
             **extra_args,
         )
+
         if stream:
-            for x in cast(Iterator[CompletionChunk], gen):
-                yield x["choices"][0]["text"]
+
+            def completion_iter() -> Iterator[str]:
+                for data in cast(Iterator[CompletionChunk], gen):
+                    yield data["choices"][0]["text"]
+
+            for x in make_completion_iter(completion_iter()):
+                yield x
         else:
-            yield cast(Completion, gen)["choices"][0]["text"]
+            yield make_completion(
+                cast(LlamaCompletion, gen)["choices"][0]["text"], finish_reason="stop"
+            )
 
 
 # https://stackoverflow.com/a/50438156

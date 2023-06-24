@@ -1,11 +1,7 @@
 #!/usr/bin/env python
 import os
-import subprocess
-import tempfile
-import traceback
 from typing import cast
 import openai
-import random
 import argparse
 import sys
 import logging

@@ -14,8 +14,9 @@ def simple_response(assistant: Assistant, prompt: str, stream: bool) -> None:
     result = ""
     try:
         for response in response_iter:
-            result += response
-            sys.stdout.write(response)
+            delta = response["delta"].get("content") or ""
+            result += delta
+            sys.stdout.write(delta)
     except KeyboardInterrupt:
         pass
     finally:
@@ -28,7 +29,7 @@ def execute(assistant: Assistant, prompt: str) -> None:
     messages.append({"role": "user", "content": prompt})
     logging.info("User: %s", prompt)
     response_iter = assistant.complete_chat(messages, stream=False)
-    result = next(response_iter)
+    result = next(response_iter)["delta"].get("content") or ""
     logging.info("Assistant: %s", result)
 
     with tempfile.NamedTemporaryFile(mode="w", prefix="gptcli-", delete=False) as f:
@@ -51,5 +52,5 @@ def execute(assistant: Assistant, prompt: str) -> None:
     shell = os.environ.get("SHELL", "/bin/bash")
 
     logging.info(f"Executing: {command}")
-    print(f"Executing:\n{command}")
+    print(f"Executing:\n{command}", file=sys.stderr)
     subprocess.run([shell, f.name])

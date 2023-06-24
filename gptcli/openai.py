@@ -1,3 +1,4 @@
+import logging
 from typing import Any, Iterator, List, cast
 import openai
 import tiktoken
@@ -69,6 +70,7 @@ class OpenAICompletionProvider(CompletionProvider):
                 yield next_choice
         else:
             next_choice = response_iter["choices"][0]
+            next_choice["delta"] = next_choice["message"]
             yield next_choice
 
 
