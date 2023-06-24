@@ -90,9 +90,15 @@ Calling function:
             self.live.update(content)
             self.live.refresh()
         else:
-            self.console.print(
-                Text(message_delta.get("content") or "", style="green"), end=""
-            )
+            text = message_delta.get("content") or ""
+            function_call = message_delta.get("function_call")
+            if function_call:
+                if "name" in function_call:
+                    text += function_call["name"]
+                if "arguments" in function_call:
+                    text += function_call["arguments"]
+
+            self.console.print(Text(text, style="green"), end="")
 
     def __exit__(self, *args):
         if self.markdown:
