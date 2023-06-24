@@ -1,7 +1,6 @@
 import os
 from typing import Iterator, List
-
-# import anthropic
+import anthropic
 
 from gptcli.completion import CompletionProvider, Message
 

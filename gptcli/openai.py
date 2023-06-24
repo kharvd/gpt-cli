@@ -1,7 +1,6 @@
 from typing import Any, Iterator, List, cast
 import openai
-
-# import tiktoken
+import tiktoken
 
 from gptcli.completion import Completion, CompletionProvider, Message
 
