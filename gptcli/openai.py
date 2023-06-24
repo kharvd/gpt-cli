@@ -51,9 +51,7 @@ class OpenAICompletionProvider(CompletionProvider):
             kwargs["top_p"] = args["top_p"]
 
         if enable_code_execution:
-            functions = FUNCTIONS_SCHEMA
-        else:
-            functions = []
+            kwargs["functions"] = FUNCTIONS_SCHEMA
 
         response_iter = cast(
             Any,
@@ -61,7 +59,6 @@ class OpenAICompletionProvider(CompletionProvider):
                 messages=messages,
                 stream=stream,
                 model=args["model"],
-                functions=functions,
                 **kwargs,
             ),
         )
