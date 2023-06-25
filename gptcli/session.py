@@ -127,8 +127,17 @@ class ChatSession:
         function_name = function_call.get("name", "null")
 
         function_result = None
+
         try:
-            function_arguments = json.loads(function_call["arguments"])
+            arguments = function_call.get("arguments", "{}")
+            if arguments.startswith("{"):
+                function_arguments = json.loads(arguments)
+            else:
+                # HACK: gpt-3.5-turbo sometimes returns a string instead of a dict for python calls
+                function_arguments = {
+                    "source": function_call.get("arguments", ""),
+                }
+
             function_result = self.listener.on_function_call(
                 function_name, **function_arguments
             )

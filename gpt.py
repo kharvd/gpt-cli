@@ -223,7 +223,7 @@ class CLIChatSession(ChatSession):
             listeners.append(PriceChatListener(assistant))
 
         if os.environ.get("GPTCLI_ALLOW_CODE_EXECUTION") == "1":
-            listeners.append(CodeInterpreterListener("python_eval"))
+            listeners.append(CodeInterpreterListener("python"))
 
         listener = CompositeChatListener(listeners)
         super().__init__(

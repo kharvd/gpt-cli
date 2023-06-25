@@ -7,7 +7,7 @@ from gptcli.completion import Completion, CompletionProvider, Message
 
 FUNCTIONS_SCHEMA = [
     {
-        "name": "python_eval",
+        "name": "python",
         "description": "Evaluate an arbitrary Python snippet",
         "parameters": {
             "type": "object",
