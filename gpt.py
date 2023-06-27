@@ -1,4 +1,10 @@
 #!/usr/bin/env python
+
+import sys
+MIN_PYTHON = (3, 9)
+if sys.version_info < MIN_PYTHON:
+    sys.exit("Python %s.%s or later is required.\n" % MIN_PYTHON)
+
 import os
 from typing import cast
 import openai
@@ -32,7 +38,6 @@ from gptcli.shell import execute, simple_response
 
 
 logger = logging.getLogger("gptcli")
-
 
 default_exception_handler = sys.excepthook
 
