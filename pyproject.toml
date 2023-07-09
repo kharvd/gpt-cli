@@ -1,0 +1,43 @@
+[build-system]
+requires = ["setuptools", "wheel"]
+
+[project]
+name = "cli-gpt"
+version = "0.1.0"
+description = "Command-line interface for ChatGPT, Claude and Bard"
+authors = [{name = "Val Kharitonov", email = "val@kharvd.com"}]
+readme = "README.md"
+license = {file = "LICENSE"}
+requires-python = ">=3.9"
+keywords = ["cli", "command-line", "assistant", "openai", "claude", "bard", "gpt-3", "gpt-4", "llm", "chatgpt", "gpt-cli", "google-bard", "anthropic", "gpt-client", "anthropic-claude", "palm2"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "Intended Audience :: End Users/Desktop",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+dependencies = [
+    "anthropic==0.2.8",
+    "black==23.1.0",
+    "llama-cpp-python==0.1.57",
+    "google-generativeai==0.1.0",
+    "openai==0.27.8",
+    "prompt-toolkit==3.0.38",
+    "pytest==7.3.1",
+    "PyYAML==6.0",
+    "rich==13.3.2",
+    "tiktoken==0.3.3",
+    "tokenizers==0.13.3",
+    "typing_extensions==4.5.0",
+]
+
+[project.urls]
+Home = "https://github.com/kharvd/gpt-cli"
+Source = "https://github.com/kharvd/gpt-cli"
+
+[project.scripts]
+gpt = "gptcli.gpt:main"
+
