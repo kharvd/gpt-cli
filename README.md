@@ -20,14 +20,16 @@ Command-line interface for ChatGPT Claude and Bard.
 
 ## Installation
 
-At present, the simplest way is to clone the repository to your machine and then install the tool as described below.
-
-This install assumes a Linux/OSX machine with python and pip available.
-
+This install assumes a Linux/OSX machine with Git, Python and pip available.
 ```bash
-git clone https://github.com/kharvd/gpt-cli
+pip install git+https://github.com/kharvd/gpt-cli.git
+```
+
+Or install by cloning the repository manually:
+```bash
+git clone https://github.com/kharvd/gpt-cli.git
 cd gpt-cli
-pip install -r requirements.txt
+pip install .
 ```
 
 Add the OpenAI API key to your `.bashrc` file (in the root of your home folder).
@@ -41,19 +43,7 @@ export OPENAI_API_KEY=<your_key_here>
 Run the tool
 
 ```
-./gpt.py
-```
-
-If you want to start the program from anywhere, you might want to create an alias in your `.bashrc`.
-
-```
-alias gpt="/path/to/gpt-cli/gpt.py"
-```
-
-Alternatively, you can create a symbolic link to the executable in a directory that is in your path, like in the following example.
-
-```
-ln -s /path/to/gpt-cli/gpt.py /usr/bin/gpt
+gpt
 ```
 
 You can also use a `gpt.yml` file for configuration. See the [Configuration](README.md#Configuration) section below.
