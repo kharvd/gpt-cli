@@ -11,6 +11,7 @@ import openai
 import argparse
 import sys
 import logging
+import datetime
 import google.generativeai as genai
 import gptcli.anthropic
 from gptcli.assistant import (
@@ -92,7 +93,7 @@ def parse_args(config: GptCliConfig):
         "--log_file",
         type=str,
         default=config.log_file,
-        help="The file to write logs to",
+        help="The file to write logs to. Supports strftime format codes.",
     )
     parser.add_argument(
         "--log_level",
@@ -150,8 +151,9 @@ def main():
     args = parse_args(config)
 
     if args.log_file is not None:
+        filename = datetime.datetime.now().strftime(args.log_file)
         logging.basicConfig(
-            filename=args.log_file,
+            filename=filename,
             level=args.log_level,
             format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
         )

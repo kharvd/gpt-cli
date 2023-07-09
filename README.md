@@ -87,7 +87,7 @@ optional arguments:
                         temperature defined for the assistant.
   --top_p TOP_P         The top_p to use for the chat session. Overrides the default top_p defined
                         for the assistant.
-  --log_file LOG_FILE   The file to write logs to
+  --log_file LOG_FILE   The file to write logs to. Supports strftime format codes.
   --log_level {DEBUG,INFO,WARNING,ERROR,CRITICAL}
                         The log level to use
   --prompt PROMPT, -p PROMPT
