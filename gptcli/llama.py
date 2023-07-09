@@ -1,7 +1,13 @@
 import os
 import sys
 from typing import Iterator, List, Optional, TypedDict, cast
-from llama_cpp import Completion, CompletionChunk, Llama
+
+try:
+    from llama_cpp import Completion, CompletionChunk, Llama
+
+    LLAMA_AVAILABLE = True
+except ImportError:
+    LLAMA_AVAILABLE = False
 
 from gptcli.completion import CompletionProvider, Message
 
@@ -16,6 +22,12 @@ LLAMA_MODELS: Optional[dict[str, LLaMAModelConfig]] = None
 
 
 def init_llama_models(models: dict[str, LLaMAModelConfig]):
+    if not LLAMA_AVAILABLE:
+        print(
+            "Error: To use llama, you need to install cli-gpt with the llama optional dependency: pip install cli-gpt[llama]."
+        )
+        sys.exit(1)
+
     for name, model_config in models.items():
         if not os.path.isfile(model_config["path"]):
             print(f"LLaMA model {name} not found at {model_config['path']}.")
