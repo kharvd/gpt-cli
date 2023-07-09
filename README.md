@@ -58,7 +58,7 @@ You can also use a `gpt.yml` file for configuration. See the [Configuration](REA
 Make sure to set the `OPENAI_API_KEY` environment variable to your OpenAI API key (or put it in the `~/.config/gpt-cli/gpt.yml` file as described below).
 
 ```
-usage: gpt.py [-h] [--no_markdown] [--model MODEL] [--temperature TEMPERATURE] [--top_p TOP_P]
+usage: gpt [-h] [--no_markdown] [--model MODEL] [--temperature TEMPERATURE] [--top_p TOP_P]
               [--log_file LOG_FILE] [--log_level {DEBUG,INFO,WARNING,ERROR,CRITICAL}]
               [--prompt PROMPT] [--execute EXECUTE] [--no_stream]
               [{dev,general,bash}]
@@ -113,13 +113,13 @@ The meaning of life is subjective and can be different for diverse human beings 
 The `dev` assistant is instructed to be an expert in software development and provide short responses.
 
 ```bash
-$ ./gpt.py dev
+$ gpt dev
 ```
 
 The `bash` assistant is instructed to be an expert in bash scripting and provide only bash commands. Use the `--execute` option to execute the commands. It works best with the `gpt-4` model.
 
 ```bash
-./gpt.py bash -e "How do I list files in a directory?"
+gpt bash -e "How do I list files in a directory?"
 ```
 
 This will prompt you to edit the command in your `$EDITOR` it before executing it.
@@ -166,7 +166,7 @@ assistants:
 ```
 
 ```
-$ ./gpt.py pirate
+$ gpt pirate
 
 > Arrrr
 Ahoy, matey! What be bringing ye to these here waters? Be it treasure or adventure ye seek, we be sailing the high seas together. Ready yer map and compass, for we have a long voyage ahead!
@@ -188,10 +188,10 @@ or a config line in `~/.config/gpt-cli/gpt.yml`:
 anthropic_api_key: <your_key_here>
 ```
 
-Now you should be able to run `gpt.py` with `--model claude-v1` or `--model claude-instant-v1`:
+Now you should be able to run `gpt` with `--model claude-v1` or `--model claude-instant-v1`:
 
 ```bash
-./gpt.py --model claude-v1
+gpt --model claude-v1
 ```
 
 ### Google Bard (PaLM 2)
@@ -205,7 +205,7 @@ or a config line:
 google_api_key: <your_key_here>
 ```
 
-Run `gpt.py` with the correct model:
+Run `gpt` with the correct model:
 ```bash
-./gpt.py --model chat-bison-001
+gpt --model chat-bison-001
 ```
