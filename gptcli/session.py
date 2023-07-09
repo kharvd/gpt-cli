@@ -1,16 +1,21 @@
 from abc import abstractmethod
+import json
+import traceback
 from typing_extensions import TypeGuard
 from gptcli.assistant import Assistant
-from gptcli.completion import Message, ModelOverrides
+from gptcli.completion import FunctionCall, Message, ModelOverrides, merge_dicts
 from openai import InvalidRequestError, OpenAIError
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 
 class ResponseStreamer:
     def __enter__(self) -> "ResponseStreamer":
         return self
 
-    def on_next_token(self, token: str):
+    def on_message_delta(self, message_delta: Message):
+        pass
+
+    def on_function_result(self, result: dict):
         pass
 
     def __exit__(self, *args):
@@ -34,6 +39,9 @@ class ChatListener:
         return ResponseStreamer()
 
     def on_chat_message(self, message: Message):
+        pass
+
+    def on_function_call(self, function_name: str, **kwargs) -> Optional[dict]:
         pass
 
     def on_chat_response(
@@ -87,35 +95,102 @@ class ChatSession:
         _, args = self.user_prompts[-1]
         self._respond(args)
 
+    def _completion(self, args: ModelOverrides):
+        next_message: Message = {
+            "role": "",
+        }
+        finish_reason = None
+
+        completion_iter = self.assistant.complete_chat(
+            self.messages, override_params=args
+        )
+
+        try:
+            with self.listener.response_streamer() as stream:
+                for completion in completion_iter:
+                    next_message = merge_dicts(next_message, completion["delta"])
+                    stream.on_message_delta(completion["delta"])
+                    finish_reason = completion["finish_reason"]
+        except KeyboardInterrupt:
+            # If the user interrupts the chat completion, we'll just return what we have so far
+            pass
+
+        if "content" not in next_message:
+            next_message["content"] = None
+
+        return {
+            "message": next_message,
+            "finish_reason": finish_reason,
+        }
+
+    def _handle_function_call(self, function_call: FunctionCall) -> Message:
+        function_name = function_call.get("name", "null")
+
+        function_result = None
+
+        try:
+            arguments = function_call.get("arguments", "{}")
+            if arguments.startswith("{"):
+                function_arguments = json.loads(arguments)
+            else:
+                # HACK: gpt-3.5-turbo sometimes returns a string instead of a dict for python calls
+                function_arguments = {
+                    "source": function_call.get("arguments", ""),
+                }
+
+            function_result = self.listener.on_function_call(
+                function_name, **function_arguments
+            )
+        except Exception:
+            function_result = {
+                "text/plain": f"Exception occurred:\n\n```{traceback.format_exc()}```"
+            }
+
+        content = ""
+        if function_result:
+            with self.listener.response_streamer() as stream:
+                stream.on_function_result(function_result)
+            content = function_result.get("text/plain")
+
+        return {
+            "role": "function",
+            "name": function_name,
+            "content": content,
+        }
+
     def _respond(self, args: ModelOverrides) -> bool:
         """
         Respond to the user's input and return whether the assistant's response was saved.
         """
-        next_response: str = ""
-        try:
-            completion_iter = self.assistant.complete_chat(
-                self.messages, override_params=args
-            )
+        finish_reason: Optional[str] = None
 
-            with self.listener.response_streamer() as stream:
-                for response in completion_iter:
-                    next_response += response
-                    stream.on_next_token(response)
-        except KeyboardInterrupt:
-            # If the user interrupts the chat completion, we'll just return what we have so far
-            pass
-        except InvalidRequestError as e:
-            self.listener.on_error(e)
-            return False
-        except OpenAIError as e:
-            self.listener.on_error(e)
-            return True
+        while finish_reason != "stop":
+            try:
+                completion = self._completion(args)
+                next_message = completion["message"]
+                finish_reason = completion["finish_reason"]
 
-        next_message: Message = {"role": "assistant", "content": next_response}
-        self.listener.on_chat_message(next_message)
-        self.listener.on_chat_response(self.messages, next_message, args)
+                if finish_reason is None:
+                    # If the user interrupts the chat completion, we'll stop here
+                    break
 
-        self.messages = self.messages + [next_message]
+            except InvalidRequestError as e:
+                self.listener.on_error(e)
+                return False
+            except OpenAIError as e:
+                self.listener.on_error(e)
+                return True
+
+            self.messages = self.messages + [next_message]
+            self.listener.on_chat_message(next_message)
+            self.listener.on_chat_response(self.messages, next_message, args)
+            if finish_reason == "function_call":
+                function_message = self._handle_function_call(
+                    next_message["function_call"]
+                )
+                self.messages = self.messages + [function_message]
+                self.listener.on_chat_message(function_message)
+
         return True
 
     def _validate_args(self, args: Dict[str, Any]) -> TypeGuard[ModelOverrides]:

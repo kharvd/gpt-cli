@@ -31,6 +31,7 @@ from gptcli.config import (
     choose_config_file,
     read_yaml_config,
 )
+from gptcli.interpreter import CodeInterpreterListener
 from gptcli.llama import init_llama_models
 from gptcli.logging import LoggingChatListener
 from gptcli.cost import PriceChatListener
@@ -94,6 +95,12 @@ def parse_args(config: GptCliConfig):
         type=str,
         default=config.log_file,
         help="The file to write logs to. Supports strftime format codes.",
+    )
+    parser.add_argument(
+        "--history_file",
+        type=str,
+        default=config.history_file,
+        help="The file to write chat history to",
     )
     parser.add_argument(
         "--log_level",
@@ -222,8 +229,14 @@ class CLIChatSession(ChatSession):
         if show_price:
             listeners.append(PriceChatListener(assistant))
 
+        if os.environ.get("GPTCLI_ALLOW_CODE_EXECUTION") == "1":
+            listeners.append(CodeInterpreterListener("python"))
+
         listener = CompositeChatListener(listeners)
-        super().__init__(assistant, listener)
+        super().__init__(
+            assistant,
+            listener,
+        )
 
 
 def run_interactive(args, assistant):
@@ -231,7 +244,9 @@ def run_interactive(args, assistant):
     session = CLIChatSession(
         assistant=assistant, markdown=args.markdown, show_price=args.show_price
     )
-    history_filename = os.path.expanduser("~/.config/gpt-cli/history")
+    history_filename = args.history_file or os.path.expanduser(
+        "~/.config/gpt-cli/history"
+    )
     os.makedirs(os.path.dirname(history_filename), exist_ok=True)
     input_provider = CLIUserInputProvider(history_filename=history_filename)
     session.loop(input_provider)

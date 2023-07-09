@@ -23,6 +23,7 @@ class GptCliConfig:
     anthropic_api_key: Optional[str] = os.environ.get("ANTHROPIC_API_KEY")
     google_api_key: Optional[str] = os.environ.get("GOOGLE_API_KEY")
     log_file: Optional[str] = None
+    history_file: Optional[str] = None
     log_level: str = "INFO"
     assistants: Dict[str, AssistantConfig] = {}
     interactive: Optional[bool] = None

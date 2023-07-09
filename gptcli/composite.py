@@ -2,7 +2,7 @@ from gptcli.completion import Message, ModelOverrides
 from gptcli.session import ChatListener, ResponseStreamer
 
 
-from typing import List
+from typing import List, Optional
 
 
 class CompositeResponseStreamer(ResponseStreamer):
@@ -14,9 +14,13 @@ class CompositeResponseStreamer(ResponseStreamer):
             streamer.__enter__()
         return self
 
-    def on_next_token(self, token: str):
+    def on_message_delta(self, message_delta: Message):
         for streamer in self.streamers:
-            streamer.on_next_token(token)
+            streamer.on_message_delta(message_delta)
+
+    def on_function_result(self, result: dict):
+        for streamer in self.streamers:
+            streamer.on_function_result(result)
 
     def __exit__(self, *args):
         for streamer in self.streamers:
@@ -57,3 +61,9 @@ class CompositeChatListener(ChatListener):
     ):
         for listener in self.listeners:
             listener.on_chat_response(messages, response, overrides)
+
+    def on_function_call(self, function_name: str, **kwargs) -> Optional[str]:
+        for listener in self.listeners:
+            result = listener.on_function_call(function_name, **kwargs)
+            if result is not None:
+                return result

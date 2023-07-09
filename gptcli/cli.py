@@ -1,4 +1,8 @@
+import base64
+import logging
 import re
+import json
+from imgcat import imgcat
 from prompt_toolkit import PromptSession
 from prompt_toolkit.history import FileHistory
 from openai import OpenAIError, InvalidRequestError
@@ -9,6 +13,7 @@ from rich.markdown import Markdown
 from typing import Any, Dict, Optional, Tuple
 
 from rich.text import Text
+from gptcli.completion import FunctionCall, Message, merge_dicts
 from gptcli.session import (
     ALL_COMMANDS,
     COMMAND_CLEAR,
@@ -32,7 +37,7 @@ Exit the multi-line mode by pressing ESC and then Enter (Meta+Enter).
 class StreamingMarkdownPrinter:
     def __init__(self, console: Console, markdown: bool):
         self.console = console
-        self.current_text = ""
+        self.current_message = {}
         self.markdown = markdown
         self.live: Optional[Live] = None
 
@@ -44,14 +49,55 @@ class StreamingMarkdownPrinter:
             self.live.__enter__()
         return self
 
-    def print(self, text: str):
-        self.current_text += text
+    def _format_function_call(self, function_call: FunctionCall) -> str:
+        text = ""
+        if function_call.get("name") == "python_eval":
+            source = function_call.get("arguments", "")
+            try:
+                source = json.loads(source).get("source", "")
+            except:
+                source = source + '"}'
+                try:
+                    source = json.loads(source).get("source", "")
+                except:
+                    source = ""
+
+            text += "\n\nExecuting Python code:\n"
+            text += f"```python\n{source}\n```"
+        else:
+            function_name = function_call.get("name", "?")
+            function_arguments = function_call.get("arguments", {})
+            text += f"""\n
+Calling function:
+
+```
+{function_name}({function_arguments})
+```"""
+        return text
+
+    def print(self, message_delta: Message):
+        self.current_message = merge_dicts(self.current_message, message_delta)
+
         if self.markdown:
             assert self.live
-            content = Markdown(self.current_text, style="green")
+            text = self.current_message.get("content", "")
+
+            function_call = self.current_message.get("function_call")
+            if function_call:
+                text += self._format_function_call(function_call)
+
+            content = Markdown(text, style="green")
             self.live.update(content)
             self.live.refresh()
         else:
+            text = message_delta.get("content") or ""
+            function_call = message_delta.get("function_call")
+            if function_call:
+                if "name" in function_call:
+                    text += function_call["name"]
+                if "arguments" in function_call:
+                    text += function_call["arguments"]
+
             self.console.print(Text(text, style="green"), end="")
 
     def __exit__(self, *args):
@@ -66,17 +112,29 @@ class CLIResponseStreamer(ResponseStreamer):
         self.console = console
         self.markdown = markdown
         self.printer = StreamingMarkdownPrinter(self.console, self.markdown)
-        self.first_token = True
 
     def __enter__(self):
         self.printer.__enter__()
         return self
 
-    def on_next_token(self, token: str):
-        if self.first_token and token.startswith(" "):
-            token = token[1:]
-        self.first_token = False
-        self.printer.print(token)
+    def on_message_delta(self, message_delta: Message):
+        self.printer.print(message_delta)
+
+    def on_function_result(self, result: dict):
+        self.console.print(Text("Function result:", style="yellow"))
+        if "image/png" in result:
+            image_base64 = result["image/png"]
+            image_bytes = base64.b64decode(image_base64)
+            imgcat(image_bytes)
+        if "text/plain" in result:
+            text = result["text/plain"]
+            if self.markdown:
+                content = Markdown(
+                    f"```\n{text}\n```",
+                )
+            else:
+                content = Text(text, style="yellow")
+            self.console.print(content)
 
     def __exit__(self, *args):
         self.printer.__exit__(*args)
