@@ -2,7 +2,7 @@
 
 Command-line interface for ChatGPT Claude and Bard.
 
-![screenshot](./screenshot.png)
+![screenshot](https://github.com/kharvd/gpt-cli/assets/466920/ecbcccc4-7cfa-4c04-83c3-a822b6596f01)
 
 ## Features
 
