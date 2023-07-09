@@ -20,7 +20,12 @@ Command-line interface for ChatGPT Claude and Bard.
 
 ## Installation
 
-This install assumes a Linux/OSX machine with Git, Python and pip available.
+This install assumes a Linux/OSX machine with Python and pip available.
+```bash
+pip install gpt-command-line
+```
+
+Install latest version from source:
 ```bash
 pip install git+https://github.com/kharvd/gpt-cli.git
 ```

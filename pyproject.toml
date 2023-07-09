@@ -1,5 +1,5 @@
 [project]
-name = "cli-gpt"
+name = "gpt-command-line"
 version = "0.1.0"
 description = "Command-line interface for ChatGPT, Claude and Bard"
 authors = [{name = "Val Kharitonov", email = "val@kharvd.com"}]
