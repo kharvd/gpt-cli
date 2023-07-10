@@ -3,6 +3,7 @@ from prompt_toolkit import PromptSession
 from prompt_toolkit.history import FileHistory
 from openai import OpenAIError, InvalidRequestError
 from prompt_toolkit.key_binding import KeyBindings, KeyPressEvent
+from prompt_toolkit.key_binding.bindings import named_commands
 from rich.console import Console
 from rich.live import Live
 from rich.markdown import Markdown
@@ -151,6 +152,13 @@ class CLIUserInputProvider(UserInputProvider):
 
     def prompt(self, multiline=False):
         bindings = KeyBindings()
+
+        bindings.add("c-a")(named_commands.get_by_name("beginning-of-line"))
+        bindings.add("c-b")(named_commands.get_by_name("backward-char"))
+        bindings.add("c-e")(named_commands.get_by_name("end-of-line"))
+        bindings.add("c-f")(named_commands.get_by_name("forward-char"))
+        bindings.add("c-left")(named_commands.get_by_name("backward-word"))
+        bindings.add("c-right")(named_commands.get_by_name("forward-word"))
 
         @bindings.add("c-c")
         def _(event: KeyPressEvent):
