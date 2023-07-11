@@ -15,10 +15,10 @@ from rich.console import Console
 
 
 import logging
-from typing import List
+from typing import List, Optional
 
 
-def num_tokens_from_messages(messages: List[Message], model: str) -> int:
+def num_tokens_from_messages(messages: List[Message], model: str) -> Optional[int]:
     if model.startswith("gpt"):
         return num_tokens_from_messages_openai(messages, model)
     elif model.startswith("claude"):
@@ -26,12 +26,12 @@ def num_tokens_from_messages(messages: List[Message], model: str) -> int:
     elif model.startswith("llama"):
         return 0
     elif model.startswith("chat-bison"):
-        return 0  # TODO
+        return None  # TODO
     else:
-        raise ValueError(f"Unknown model: {model}")
+        return None
 
 
-def num_tokens_from_completion(message: Message, model: str) -> int:
+def num_tokens_from_completion(message: Message, model: str) -> Optional[int]:
     if model.startswith("gpt"):
         return num_tokens_from_completion_openai(message, model)
     elif model.startswith("claude"):
@@ -39,9 +39,9 @@ def num_tokens_from_completion(message: Message, model: str) -> int:
     elif model.startswith("llama"):
         return 0
     elif model.startswith("chat-bison"):
-        return 0  # TODO
+        return None  # TODO
     else:
-        raise ValueError(f"Unknown model: {model}")
+        return None
 
 
 GPT_3_5_TURBO_PRICE_PER_TOKEN = {
@@ -64,63 +64,67 @@ GPT_4_32K_PRICE_PER_TOKEN = {
     "response": 0.12 / 1000,
 }
 
-CLAUDE_V1_PRICE_PER_TOKEN = {
+
+def gpt_pricing(model: str, prompt: bool) -> Optional[float]:
+    if model.startswith("gpt-3.5-turbo-16k"):
+        pricing = GPT_3_5_TURBO_16K_PRICE_PER_TOKEN
+    elif model.startswith("gpt-3.5-turbo"):
+        pricing = GPT_3_5_TURBO_PRICE_PER_TOKEN
+    elif model.startswith("gpt-4-32k"):
+        pricing = GPT_4_32K_PRICE_PER_TOKEN
+    elif model.startswith("gpt-4"):
+        pricing = GPT_4_PRICE_PER_TOKEN
+    else:
+        return None
+    return pricing["prompt" if prompt else "response"]
+
+
+CLAUDE_PRICE_PER_TOKEN = {
     "prompt": 11.02 / 1_000_000,
     "response": 32.68 / 1_000_000,
 }
 
-CLAUDE_INSTANT_V1_PRICE_PER_TOKEN = {
+CLAUDE_INSTANT_PRICE_PER_TOKEN = {
     "prompt": 1.63 / 1_000_000,
     "response": 5.51 / 1_000_000,
 }
 
-PRICE_PER_TOKEN = {
-    "gpt-3.5-turbo": GPT_3_5_TURBO_PRICE_PER_TOKEN,
-    "gpt-3.5-turbo-0301": GPT_3_5_TURBO_PRICE_PER_TOKEN,
-    "gpt-3.5-turbo-0613": GPT_3_5_TURBO_PRICE_PER_TOKEN,
-    "gpt-3.5-turbo-16k": GPT_3_5_TURBO_16K_PRICE_PER_TOKEN,
-    "gpt-3.5-turbo-16k-0613": GPT_3_5_TURBO_16K_PRICE_PER_TOKEN,
-    "gpt-4": GPT_4_PRICE_PER_TOKEN,
-    "gpt-4-0314": GPT_4_PRICE_PER_TOKEN,
-    "gpt-4-0613": GPT_4_PRICE_PER_TOKEN,
-    "gpt-4-32k": GPT_4_32K_PRICE_PER_TOKEN,
-    "gpt-4-32k-0314": GPT_4_32K_PRICE_PER_TOKEN,
-    "gpt-4-32k-0613": GPT_4_32K_PRICE_PER_TOKEN,
-    "claude-v1": CLAUDE_V1_PRICE_PER_TOKEN,
-    "claude-v1-100k": CLAUDE_V1_PRICE_PER_TOKEN,
-    "claude-v1.0": CLAUDE_V1_PRICE_PER_TOKEN,
-    "claude-v1.2": CLAUDE_V1_PRICE_PER_TOKEN,
-    "claude-v1.3": CLAUDE_V1_PRICE_PER_TOKEN,
-    "claude-v1.3-100k": CLAUDE_V1_PRICE_PER_TOKEN,
-    "claude-instant-v1": CLAUDE_INSTANT_V1_PRICE_PER_TOKEN,
-    "claude-instant-v1-100k": CLAUDE_INSTANT_V1_PRICE_PER_TOKEN,
-    "claude-instant-v1.0": CLAUDE_INSTANT_V1_PRICE_PER_TOKEN,
-    "llama": {
-        "prompt": 0,
-        "response": 0,
-    },
-}
+
+def claude_pricing(model: str, prompt: bool) -> Optional[float]:
+    if "instant" in model:
+        pricing = CLAUDE_INSTANT_PRICE_PER_TOKEN
+    else:
+        pricing = CLAUDE_PRICE_PER_TOKEN
+    return pricing.get("prompt" if prompt else "response")
 
 
-def price_per_token(model: str, prompt: bool) -> float:
+def price_per_token(model: str, prompt: bool) -> Optional[float]:
     if model.startswith("gpt"):
-        return PRICE_PER_TOKEN[model]["prompt" if prompt else "response"]
+        return gpt_pricing(model, prompt)
     elif model.startswith("claude"):
-        return PRICE_PER_TOKEN[model]["prompt" if prompt else "response"]
+        return claude_pricing(model, prompt)
     elif model.startswith("llama"):
         return 0
     elif model.startswith("chat-bison"):
         return 0  # TODO
     else:
-        raise ValueError(f"Unknown model: {model}")
+        return None
 
 
 def price_for_completion(messages: List[Message], response: Message, model: str):
     num_tokens_prompt = num_tokens_from_messages(messages, model)
     num_tokens_response = num_tokens_from_completion(response, model)
+    if num_tokens_prompt is None or num_tokens_response is None:
+        return None
+
+    price_per_token_prompt = price_per_token(model, prompt=True)
+    price_per_token_response = price_per_token(model, prompt=False)
+    if price_per_token_prompt is None or price_per_token_response is None:
+        return None
+
     return (
-        price_per_token(model, prompt=True) * num_tokens_prompt
-        + price_per_token(model, prompt=False) * num_tokens_response
+        price_per_token_prompt * num_tokens_prompt
+        + price_per_token_response * num_tokens_response
     )
 
 
@@ -140,6 +144,9 @@ class PriceChatListener(ChatListener):
         model = self.assistant._param("model", args)
         num_tokens = num_tokens_from_messages(messages + [response], model)
         price = price_for_completion(messages, response, model)
+        if price is None:
+            self.logger.error(f"Cannot get cost information for model {model}")
+            return
         self.current_spend += price
         self.logger.info(f"Token usage {num_tokens}")
         self.logger.info(f"Message price (model: {model}): ${price:.3f}")
