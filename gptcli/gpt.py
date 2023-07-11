@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import sys
+
 MIN_PYTHON = (3, 9)
 if sys.version_info < MIN_PYTHON:
     sys.exit("Python %s.%s or later is required.\n" % MIN_PYTHON)
@@ -129,6 +130,13 @@ def parse_args(config: GptCliConfig):
         dest="show_price",
         help="Disable price logging.",
         default=config.show_price,
+    )
+    parser.add_argument(
+        "--version",
+        "-v",
+        action="version",
+        version=f"gpt-cli v{gptcli.__version__}",
+        help="Print the version number and exit.",
     )
 
     return parser.parse_args()
