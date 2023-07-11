@@ -53,10 +53,18 @@ class InvalidArgumentError(Exception):
         self.message = message
 
 
-COMMAND_CLEAR = ("clear", "c")
-COMMAND_QUIT = ("quit", "q")
-COMMAND_RERUN = ("rerun", "r")
-ALL_COMMANDS = [*COMMAND_CLEAR, *COMMAND_QUIT, *COMMAND_RERUN]
+COMMAND_CLEAR = (":clear", ":c")
+COMMAND_QUIT = (":quit", ":q")
+COMMAND_RERUN = (":rerun", ":r")
+COMMAND_HELP = (":help", ":h", ":?")
+ALL_COMMANDS = [*COMMAND_CLEAR, *COMMAND_QUIT, *COMMAND_RERUN, *COMMAND_HELP]
+COMMANDS_HELP = """
+Commands:
+- `:clear` / `:c` / Ctrl+C - Clear the conversation.
+- `:quit` / `:q` / Ctrl+D - Quit the program.
+- `:rerun` / `:r` / Ctrl+R - Re-run the last message.
+- `:help` / `:h` / `:?` - Show this help message.
+"""
 
 
 class ChatSession:
@@ -140,6 +148,10 @@ class ChatSession:
         self.messages = self.messages[:-1]
         self.user_prompts = self.user_prompts[:-1]
 
+    def _print_help(self):
+        with self.listener.response_streamer() as stream:
+            stream.on_next_token(COMMANDS_HELP)
+
     def process_input(self, user_input: str, args: Dict[str, Any]):
         """
         Process the user's input and return whether the session should continue.
@@ -154,6 +166,9 @@ class ChatSession:
             return True
         elif user_input in COMMAND_RERUN:
             self._rerun()
+            return True
+        elif user_input in COMMAND_HELP:
+            self._print_help()
             return True
 
         self._add_user_message(user_input, args)

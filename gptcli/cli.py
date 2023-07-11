@@ -23,10 +23,11 @@ from gptcli.session import (
 
 
 TERMINAL_WELCOME = """
-Hi! I'm here to help. Type `q` or Ctrl-D to exit, `c` or Ctrl-C to clear
-the conversation, `r` or Ctrl-R to re-generate the last response.
+Hi! I'm here to help. Type `:q` or Ctrl-D to exit, `:c` or Ctrl-C and Enter to clear
+the conversation, `:r` or Ctrl-R to re-generate the last response.
 To enter multi-line mode, enter a backslash `\\` followed by a new line.
 Exit the multi-line mode by pressing ESC and then Enter (Meta+Enter).
+Try `:?` for help.
 """
 
 
@@ -164,7 +165,7 @@ class CLIUserInputProvider(UserInputProvider):
         def _(event: KeyPressEvent):
             if len(event.current_buffer.text) == 0 and not multiline:
                 event.current_buffer.text = COMMAND_CLEAR[0]
-                event.current_buffer.validate_and_handle()
+                event.current_buffer.cursor_right(len(COMMAND_CLEAR[0]))
             else:
                 event.app.exit(exception=KeyboardInterrupt, style="class:aborting")
 
