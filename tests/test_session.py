@@ -51,7 +51,7 @@ def test_simple_input():
 
 def test_quit():
     _, _, session = setup_session()
-    should_continue = session.process_input("q", {})
+    should_continue = session.process_input(":q", {})
     assert not should_continue
 
 
@@ -79,7 +79,7 @@ def test_clear():
     assistant_mock.complete_chat.reset_mock()
     listener_mock.on_chat_message.reset_mock()
 
-    should_continue = session.process_input("c", {})
+    should_continue = session.process_input(":c", {})
     assert should_continue
 
     assistant_mock.init_messages.assert_called_once()
@@ -110,7 +110,7 @@ def test_rerun():
     assistant_mock.init_messages.reset_mock()
 
     # Re-run before any input shouldn't do anything
-    should_continue = session.process_input("r", {})
+    should_continue = session.process_input(":r", {})
     assert should_continue
 
     assistant_mock.init_messages.assert_not_called()
@@ -141,7 +141,7 @@ def test_rerun():
 
     assistant_mock.complete_chat.return_value = ["assistant_message_1"]
 
-    should_continue = session.process_input("r", {})
+    should_continue = session.process_input(":r", {})
     assert should_continue
 
     listener_mock.on_chat_rerun.assert_called_once_with(True)
@@ -185,7 +185,7 @@ def test_args():
 
     assistant_mock.complete_chat.return_value = [expected_response]
 
-    should_continue = session.process_input("r", {})
+    should_continue = session.process_input(":r", {})
     assert should_continue
 
     assistant_mock.complete_chat.assert_called_once_with(
@@ -213,7 +213,7 @@ def test_invalid_request_error():
     listener_mock.on_chat_message.reset_mock()
     listener_mock.on_error.reset_mock()
 
-    should_continue = session.process_input("r", {})
+    should_continue = session.process_input(":r", {})
     assert should_continue
 
     assistant_mock.complete_chat.assert_not_called()
@@ -248,7 +248,7 @@ def test_openai_error():
     assistant_mock.complete_chat.side_effect = None
     assistant_mock.complete_chat.return_value = ["assistant message"]
 
-    should_continue = session.process_input("r", {})
+    should_continue = session.process_input(":r", {})
     assert should_continue
 
     assistant_mock.complete_chat.assert_called_once_with(
