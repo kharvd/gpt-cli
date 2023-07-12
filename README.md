@@ -124,6 +124,24 @@ gpt bash -e "How do I list files in a directory?"
 
 This will prompt you to edit the command in your `$EDITOR` it before executing it.
 
+### Combine the `promt -` ussage to read from file
+
+To read from a "input.txt" file and show the resutl in screen, you can combine it with [entr](https://github.com/eradman/entr) as follows:
+
+Clean response every time:
+
+```bash
+echo input.md | entr -cr sh -c "clear && cat input.md | gpt -p -"
+```
+
+Save the response in a file with log:
+
+```bash
+echo input.md | entr -cr sh -c "clear && cat input.md | gpt -p - >> out && echo -e '\n--------\n' >> ou
+t"
+echo out | entr -cr sh -c "cat out"
+```
+
 ## Configuration
 
 You can configure the assistants in the config file `~/.config/gpt-cli/gpt.yml`. The file is a YAML file with the following structure (see also [config.py](./gptcli/config.py))
