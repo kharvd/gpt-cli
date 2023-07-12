@@ -17,7 +17,7 @@ classifiers = [
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
 ]
 dependencies = [
-    "anthropic==0.2.8",
+    "anthropic==0.3.4",
     "black==23.1.0",
     "google-generativeai==0.1.0",
     "openai==0.27.8",

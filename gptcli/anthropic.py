@@ -11,7 +11,7 @@ def get_client():
     if not api_key:
         raise ValueError("ANTHROPIC_API_KEY environment variable not set")
 
-    return anthropic.Client(api_key)
+    return anthropic.Anthropic(api_key=api_key)
 
 
 def role_to_name(role: str) -> str:
@@ -38,7 +38,7 @@ class AnthropicCompletionProvider(CompletionProvider):
         kwargs = {
             "prompt": make_prompt(messages),
             "stop_sequences": [anthropic.HUMAN_PROMPT],
-            "max_tokens_to_sample": 2048,
+            "max_tokens_to_sample": 4096,
             "model": args["model"],
         }
         if "temperature" in args:
@@ -48,21 +48,21 @@ class AnthropicCompletionProvider(CompletionProvider):
 
         client = get_client()
         if stream:
-            response = client.completion_stream(**kwargs)
+            response = client.completions.create(**kwargs, stream=True)
         else:
-            response = [client.completion(**kwargs)]
+            response = [client.completions.create(**kwargs, stream=False)]
 
-        prev_completion = ""
         for data in response:
-            next_completion = data["completion"]
-            yield next_completion[len(prev_completion) :]
-            prev_completion = next_completion
+            next_completion = data.completion
+            yield next_completion
 
 
 def num_tokens_from_messages_anthropic(messages: List[Message], model: str) -> int:
     prompt = make_prompt(messages)
-    return anthropic.count_tokens(prompt)
+    client = get_client()
+    return client.count_tokens(prompt)
 
 
 def num_tokens_from_completion_anthropic(message: Message, model: str) -> int:
-    return anthropic.count_tokens(message["content"])
+    client = get_client()
+    return client.count_tokens(message["content"])
