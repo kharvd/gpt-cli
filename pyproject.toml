@@ -32,7 +32,7 @@ dependencies = [
 
 [project.optional-dependencies]
 llama = [
-    "llama-cpp-python==0.1.57",
+    "llama-cpp-python==0.1.73",
 ]
 
 [project.urls]
