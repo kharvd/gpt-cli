@@ -2,7 +2,7 @@ from abc import abstractmethod
 from typing_extensions import TypeGuard
 from gptcli.assistant import Assistant
 from gptcli.completion import Message, ModelOverrides
-from openai import InvalidRequestError, OpenAIError
+from openai import BadRequestError, OpenAIError
 from typing import Any, Dict, List, Tuple
 
 
@@ -112,7 +112,7 @@ class ChatSession:
         except KeyboardInterrupt:
             # If the user interrupts the chat completion, we'll just return what we have so far
             pass
-        except InvalidRequestError as e:
+        except BadRequestError as e:
             self.listener.on_error(e)
             return False
         except OpenAIError as e:

@@ -1,11 +1,17 @@
-from typing import Any, Iterator, List, cast
+from typing import Iterator, List, cast
 import openai
+from openai import OpenAI
+from openai.types.chat import ChatCompletionMessageParam
+
 import tiktoken
 
 from gptcli.completion import CompletionProvider, Message
 
 
 class OpenAICompletionProvider(CompletionProvider):
+    def __init__(self):
+        self.client = OpenAI(api_key=openai.api_key)
+
     def complete(
         self, messages: List[Message], args: dict, stream: bool = False
     ) -> Iterator[str]:
@@ -15,27 +21,28 @@ class OpenAICompletionProvider(CompletionProvider):
         if "top_p" in args:
             kwargs["top_p"] = args["top_p"]
 
-        response_iter = cast(
-            Any,
-            openai.ChatCompletion.create(
-                messages=messages,
-                stream=stream,
+        if stream:
+            response_iter = self.client.chat.completions.create(
+                messages=cast(List[ChatCompletionMessageParam], messages),
+                stream=True,
                 model=args["model"],
                 **kwargs,
-            ),
-        )
+            )
 
-        if stream:
             for response in response_iter:
-                next_choice = response["choices"][0]
-                if (
-                    next_choice["finish_reason"] is None
-                    and "content" in next_choice["delta"]
-                ):
-                    yield next_choice["delta"]["content"]
+                next_choice = response.choices[0]
+                if next_choice.finish_reason is None and next_choice.delta.content:
+                    yield next_choice.delta.content
         else:
-            next_choice = response_iter["choices"][0]
-            yield next_choice["message"]["content"]
+            response = self.client.chat.completions.create(
+                messages=cast(List[ChatCompletionMessageParam], messages),
+                model=args["model"],
+                stream=False,
+                **kwargs,
+            )
+            next_choice = response.choices[0]
+            if next_choice.message.content:
+                yield next_choice.message.content
 
 
 def num_tokens_from_messages_openai(messages: List[Message], model: str) -> int:

@@ -1,7 +1,7 @@
 import re
 from prompt_toolkit import PromptSession
 from prompt_toolkit.history import FileHistory
-from openai import OpenAIError, InvalidRequestError
+from openai import OpenAIError, BadRequestError
 from prompt_toolkit.key_binding import KeyBindings, KeyPressEvent
 from prompt_toolkit.key_binding.bindings import named_commands
 from rich.console import Console
@@ -103,7 +103,7 @@ class CLIChatListener(ChatListener):
             self.console.print("[bold]Nothing to re-run.[/bold]")
 
     def on_error(self, e: Exception):
-        if isinstance(e, InvalidRequestError):
+        if isinstance(e, BadRequestError):
             self.console.print(
                 f"[red]Request Error. The last prompt was not saved: {type(e)}: {e}[/red]"
             )
