@@ -15,6 +15,7 @@ import logging
 import datetime
 import google.generativeai as genai
 import gptcli.anthropic
+import gptcli.together
 from gptcli.assistant import (
     Assistant,
     DEFAULT_ASSISTANTS,
@@ -177,6 +178,9 @@ def main():
             "No API key found. Please set the OPENAI_API_KEY environment variable or `api_key: <key>` value in ~/.config/gpt-cli/gpt.yml"
         )
         sys.exit(1)
+
+    if config.together_api_key:
+        gptcli.together.api_key = config.together_api_key
 
     if config.anthropic_api_key:
         gptcli.anthropic.api_key = config.anthropic_api_key
