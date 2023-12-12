@@ -1,6 +1,7 @@
 from unittest import mock
+import httpx
 
-from openai import InvalidRequestError, OpenAIError
+from openai import BadRequestError, OpenAIError
 
 from gptcli.session import ChatSession
 
@@ -197,7 +198,13 @@ def test_args():
 def test_invalid_request_error():
     assistant_mock, listener_mock, session = setup_session()
 
-    error = InvalidRequestError("error message", "error details")
+    error = BadRequestError(
+        "error message",
+        response=httpx.Response(
+            401, request=httpx.Request("POST", "http://localhost/")
+        ),
+        body=None,
+    )
     assistant_mock.complete_chat.side_effect = error
 
     user_input = "user message"
