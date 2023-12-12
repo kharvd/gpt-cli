@@ -9,6 +9,7 @@ from gptcli.google import GoogleCompletionProvider
 from gptcli.llama import LLaMACompletionProvider
 from gptcli.openai import OpenAICompletionProvider
 from gptcli.anthropic import AnthropicCompletionProvider
+from gptcli.together import TogetherCompletionProvider
 
 
 class AssistantConfig(TypedDict, total=False):
@@ -16,6 +17,11 @@ class AssistantConfig(TypedDict, total=False):
     model: str
     temperature: float
     top_p: float
+    system_prefix: str
+    system_suffix: str
+    user_prefix: str
+    user_suffix: str
+    stop_tokens: List[str]
 
 
 CONFIG_DEFAULTS = {
@@ -55,7 +61,9 @@ DEFAULT_ASSISTANTS: Dict[str, AssistantConfig] = {
 }
 
 
-def get_completion_provider(model: str) -> CompletionProvider:
+def get_completion_provider(
+    model: str, assistant_config: AssistantConfig
+) -> CompletionProvider:
     if model.startswith("gpt"):
         return OpenAICompletionProvider()
     elif model.startswith("claude"):
@@ -64,6 +72,16 @@ def get_completion_provider(model: str) -> CompletionProvider:
         return LLaMACompletionProvider()
     elif model.startswith("chat-bison"):
         return GoogleCompletionProvider()
+    elif model.startswith("together"):
+        return TogetherCompletionProvider(
+            {
+                "system_prefix": assistant_config.get("system_prefix", ""),
+                "system_suffix": assistant_config.get("system_suffix", ""),
+                "user_prefix": assistant_config.get("user_prefix", ""),
+                "user_suffix": assistant_config.get("user_suffix", ""),
+                "stop_tokens": assistant_config.get("stop_tokens", []),
+            }
+        )
     else:
         raise ValueError(f"Unknown model: {model}")
 
@@ -103,7 +121,7 @@ class Assistant:
         self, messages, override_params: ModelOverrides = {}, stream: bool = True
     ) -> Iterator[str]:
         model = self._param("model", override_params)
-        completion_provider = get_completion_provider(model)
+        completion_provider = get_completion_provider(model, self.config)
         return completion_provider.complete(
             messages,
             {
