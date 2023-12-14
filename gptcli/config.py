@@ -20,6 +20,7 @@ class GptCliConfig:
     show_price: bool = True
     api_key: Optional[str] = os.environ.get("OPENAI_API_KEY")
     openai_api_key: Optional[str] = os.environ.get("OPENAI_API_KEY")
+    mistral_api_key: Optional[str] = os.environ.get("MISTRAL_API_KEY")
     anthropic_api_key: Optional[str] = os.environ.get("ANTHROPIC_API_KEY")
     google_api_key: Optional[str] = os.environ.get("GOOGLE_API_KEY")
     log_file: Optional[str] = None
