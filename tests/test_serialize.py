@@ -30,6 +30,7 @@ def test_serialize():
     serializer.load(file_path)
     print(serializer.conversation.topic, serializer.conversation.id, serializer.conversation.messages)
 
+
 def test_render():
     config = GptCliConfig()
     save_directory = config.conversations_save_directory
