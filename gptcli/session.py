@@ -1,3 +1,4 @@
+import glob
 from abc import abstractmethod
 import os
 import pytz
@@ -9,6 +10,7 @@ from openai import BadRequestError, OpenAIError
 from typing import Any, Dict, List, Tuple
 
 from gptcli.config import GptCliConfig
+from gptcli.renderer import Renderer
 from gptcli.serializer import Conversation, ConversationSerializer
 
 
