@@ -29,6 +29,7 @@ dependencies = [
     "tiktoken==0.5.2",
     "tokenizers==0.15.0",
     "typing_extensions==4.5.0",
+    "pytz==2023.3.post1",
 ]
 
 [project.optional-dependencies]
