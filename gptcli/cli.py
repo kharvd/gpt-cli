@@ -209,4 +209,5 @@ class CLIUserInputProvider(UserInputProvider):
 
     def _parse_input(self, input: str) -> Tuple[str, Dict[str, Any]]:
         input, args = parse_args(input)
+
         return input, args

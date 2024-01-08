@@ -16,7 +16,7 @@ class Conversation:
             now = datetime.now(
                 beijing_tz)  # 获取当前北京时间
             self.id = now.strftime(
-                '%Y%m%d%H%M')  # 格式化时间戳
+                '%Y%m%d%H%M%S')  # 格式化时间戳
         else:
             self.id = id
         self.messages: List[Message] = messages

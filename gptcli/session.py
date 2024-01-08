@@ -1,9 +1,15 @@
 from abc import abstractmethod
+import os
+import pytz
+from datetime import datetime
 from typing_extensions import TypeGuard
 from gptcli.assistant import Assistant
 from gptcli.completion import Message, ModelOverrides
 from openai import BadRequestError, OpenAIError
 from typing import Any, Dict, List, Tuple
+
+from gptcli.config import GptCliConfig
+from gptcli.serializer import Conversation, ConversationSerializer
 
 
 class ResponseStreamer:
@@ -37,7 +43,7 @@ class ChatListener:
         pass
 
     def on_chat_response(
-        self, messages: List[Message], response: Message, overrides: ModelOverrides
+            self, messages: List[Message], response: Message, overrides: ModelOverrides
     ):
         pass
 
@@ -57,31 +63,53 @@ COMMAND_CLEAR = (":clear", ":c")
 COMMAND_QUIT = (":quit", ":q")
 COMMAND_RERUN = (":rerun", ":r")
 COMMAND_HELP = (":help", ":h", ":?")
-ALL_COMMANDS = [*COMMAND_CLEAR, *COMMAND_QUIT, *COMMAND_RERUN, *COMMAND_HELP]
+COMMAND_SAVE = (":save", ":s")
+ALL_COMMANDS = [*COMMAND_CLEAR, *COMMAND_QUIT, *COMMAND_RERUN, *COMMAND_HELP, *COMMAND_SAVE]
 COMMANDS_HELP = """
 Commands:
 - `:clear` / `:c` / Ctrl+C - Clear the conversation.
 - `:quit` / `:q` / Ctrl+D - Quit the program.
 - `:rerun` / `:r` / Ctrl+R - Re-run the last message.
 - `:help` / `:h` / `:?` - Show this help message.
+- `:save` / `:s` / Ctrl+S - Save the conversation.
 """
+
+
+def generate_session_id():
+    beijing_tz = pytz.timezone(
+        'Asia/Shanghai')  # 获取北京时区
+    now = datetime.now(
+        beijing_tz)  # 获取当前北京时间
+    return now.strftime('%Y%m%d%H%M%S')  # 格式化时间戳
 
 
 class ChatSession:
     def __init__(
-        self,
-        assistant: Assistant,
-        listener: ChatListener,
+            self,
+            assistant: Assistant,
+            listener: ChatListener,
     ):
         self.assistant = assistant
         self.messages: List[Message] = assistant.init_messages()
         self.user_prompts: List[Tuple[Message, ModelOverrides]] = []
         self.listener = listener
+        self.session_id = generate_session_id()  # 新增会话ID
 
     def _clear(self):
         self.messages = self.assistant.init_messages()
         self.user_prompts = []
         self.listener.on_chat_clear()
+        self.session_id = generate_session_id()
+
+    def _save(self):
+        if len(self.messages) > 0:
+            topic = self.messages[0]["content"]
+            conversation = Conversation(topic=topic, messages=self.messages, id=int(self.session_id))
+            serializer = ConversationSerializer(conversation)
+            config = GptCliConfig()
+            save_directory = config.conversations_save_directory
+            os.makedirs(save_directory, exist_ok=True)
+            serializer.dump(save_directory)
 
     def _rerun(self):
         if len(self.user_prompts) == 0:
@@ -166,6 +194,9 @@ class ChatSession:
             return True
         elif user_input in COMMAND_RERUN:
             self._rerun()
+            return True
+        elif user_input in COMMAND_SAVE:
+            self._save()
             return True
         elif user_input in COMMAND_HELP:
             self._print_help()
