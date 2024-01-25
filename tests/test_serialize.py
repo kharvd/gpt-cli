@@ -1,9 +1,8 @@
 import glob
 import os
 
-from gptcli.session import render
+from gptcli.session import render_jsons
 from gptcli.config import GptCliConfig
-from gptcli.renderer import Renderer
 from gptcli.serializer import Conversation, ConversationSerializer
 
 
@@ -33,4 +32,4 @@ def test_serialize():
 
 
 def test_render():
-    render()
+    render_jsons()

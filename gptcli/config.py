@@ -24,8 +24,8 @@ class GptCliConfig:
     google_api_key: Optional[str] = os.environ.get("GOOGLE_API_KEY")
     log_file: Optional[str] = None
     log_level: str = "INFO"
-    conversations_read_directory: str = os.path.join(os.path.expanduser("~"), "Documents", "gpt-cli", "conversations")
-    conversations_save_directory: str = os.path.join(os.path.expanduser("~"), "develop", "opencsg", "work", "docs", "opencsg", "gpt-generate-md")
+    conversations_save_directory: str = os.path.join(os.path.expanduser("~"), "Documents", "gpt-cli", "conversations")
+    conversations_render_directory: str = os.path.join(os.path.expanduser("~"), "develop", "opencsg", "work", "docs", "opencsg", "gpt-generate-md")
     assistants: Dict[str, AssistantConfig] = {}
     interactive: Optional[bool] = None
     llama_models: Optional[Dict[str, LLaMAModelConfig]] = None

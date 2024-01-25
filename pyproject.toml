@@ -47,4 +47,3 @@ gpt = "gptcli.gpt:main"
 [build-system]
 requires = ["pip>=23.0.0", "setuptools>=58.0.0", "wheel"]
 build-backend = "setuptools.build_meta"
-

@@ -10,26 +10,31 @@ from openai import BadRequestError, OpenAIError
 from typing import Any, Dict, List, Tuple
 
 from gptcli.config import GptCliConfig
-from gptcli.renderer import Renderer
+from gptcli.renderer import render
 from gptcli.serializer import Conversation, ConversationSerializer
 
 
-def render():
+def render_jsons():
     config = GptCliConfig()
-    read_directory = config.conversations_read_directory
-    save_directory = config.conversations_save_directory
 
     # 使用glob模块的glob函数，获取指定文件夹下的所有.json文件
-    for filename in glob.glob(os.path.join(read_directory, '*.json')):
+    for filename in glob.glob(os.path.join(config.conversations_save_directory, '*.json')):
         # 使用os模块的splitext函数，分离文件名和扩展名
         serializer = ConversationSerializer(None)
         serializer.load(filename)
         base_name = os.path.basename(filename)
         file_name_without_extension = os.path.splitext(base_name)[0]
-        renderer = Renderer()
-        content = renderer.render("conversation.md", serializer.conversation)
+        content = render("""
+# {{data.topic}}                                                                                                                                                                                             
+                                                                                                                                                                                                                
+{% for message in data.messages %}                                                                                                                                                                             
+**{{message.role}}**: 
+
+{{message.content}}                                                                                                                                                                      
+{% endfor %}      
+        """, serializer.conversation)
         file_name = f"{file_name_without_extension}.md"
-        file_path = os.path.join(save_directory, file_name)
+        file_path = os.path.join(config.conversations_render_directory, file_name)
         with open(file_path, 'w', encoding='utf-8') as file:
             file.write(content)
 
@@ -132,7 +137,7 @@ class ChatSession:
             save_directory = config.conversations_save_directory
             os.makedirs(save_directory, exist_ok=True)
             serializer.dump(save_directory)
-            render()
+            render_jsons()
 
     def _rerun(self):
         if len(self.user_prompts) == 0:
