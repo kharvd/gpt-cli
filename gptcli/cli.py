@@ -3,6 +3,7 @@ from prompt_toolkit import PromptSession
 from prompt_toolkit.history import FileHistory
 from openai import OpenAIError, BadRequestError
 from prompt_toolkit.key_binding import KeyBindings, KeyPressEvent
+from prompt_toolkit.keys import Keys
 from prompt_toolkit.key_binding.bindings import named_commands
 from rich.console import Console
 from rich.live import Live
@@ -182,6 +183,11 @@ class CLIUserInputProvider(UserInputProvider):
                 event.current_buffer.text = COMMAND_RERUN[0]
                 event.current_buffer.validate_and_handle()
 
+        # 定义处理Ctrl+Enter的动作
+        @bindings.add(Keys.ControlJ)
+        def _(event: KeyPressEvent):
+            event.current_buffer.newline()
+
         try:
             return self.prompt_session.prompt(
                 "> " if not multiline else "multiline> ",
@@ -203,4 +209,5 @@ class CLIUserInputProvider(UserInputProvider):
 
     def _parse_input(self, input: str) -> Tuple[str, Dict[str, Any]]:
         input, args = parse_args(input)
+
         return input, args
