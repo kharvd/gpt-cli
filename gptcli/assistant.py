@@ -56,7 +56,7 @@ DEFAULT_ASSISTANTS: Dict[str, AssistantConfig] = {
 
 
 def get_completion_provider(model: str) -> CompletionProvider:
-    if model.startswith("gpt"):
+    if model.startswith("gpt") or model.startswith("ft:gpt"):
         return OpenAICompletionProvider()
     elif model.startswith("claude"):
         return AnthropicCompletionProvider()
