@@ -1,3 +1,4 @@
+import re
 from gptcli.anthropic import (
     num_tokens_from_completion_anthropic,
     num_tokens_from_messages_anthropic,
@@ -45,8 +46,8 @@ def num_tokens_from_completion(message: Message, model: str) -> Optional[int]:
 
 
 GPT_3_5_TURBO_PRICE_PER_TOKEN = {
-    "prompt": 0.0015 / 1000,
-    "response": 0.002 / 1000,
+    "prompt": 0.50 / 1_000_000,
+    "response": 1.50 / 1_000_000,
 }
 
 GPT_3_5_TURBO_16K_PRICE_PER_TOKEN = {
@@ -55,18 +56,18 @@ GPT_3_5_TURBO_16K_PRICE_PER_TOKEN = {
 }
 
 GPT_4_PRICE_PER_TOKEN = {
-    "prompt": 0.03 / 1000,
-    "response": 0.06 / 1000,
+    "prompt": 30.0 / 1_000_000,
+    "response": 60.0 / 1_000_000,
 }
 
 GPT_4_TURBO_PRICE_PER_TOKEN = {
-    "prompt": 0.01 / 1000,
-    "response": 0.03 / 1000,
+    "prompt": 10.0 / 1_000_000,
+    "response": 30.0 / 1_000_000,
 }
 
 GPT_4_32K_PRICE_PER_TOKEN = {
-    "prompt": 0.06 / 1000,
-    "response": 0.12 / 1000,
+    "prompt": 60.0 / 1_000_000,
+    "response": 120.0 / 1_000_000,
 }
 
 
@@ -77,7 +78,7 @@ def gpt_pricing(model: str, prompt: bool) -> Optional[float]:
         pricing = GPT_3_5_TURBO_PRICE_PER_TOKEN
     elif model.startswith("gpt-4-32k"):
         pricing = GPT_4_32K_PRICE_PER_TOKEN
-    elif model.startswith("gpt-4-1106-preview"):
+    elif re.match(r"gpt-4-\d\d\d\d-preview", model):
         pricing = GPT_4_TURBO_PRICE_PER_TOKEN
     elif model.startswith("gpt-4"):
         pricing = GPT_4_PRICE_PER_TOKEN
@@ -96,12 +97,38 @@ CLAUDE_INSTANT_PRICE_PER_TOKEN = {
     "response": 5.51 / 1_000_000,
 }
 
+CLAUDE_3_OPUS_PRICING = {
+    "prompt": 15.0 / 1_000_000,
+    "response": 75.0 / 1_000_000,
+}
+
+CLAUDE_3_SONNET_PRICING = {
+    "prompt": 3.0 / 1_000_000,
+    "response": 15.0 / 1_000_000,
+}
+
+CLAUDE_3_HAIKU_PRICING = {
+    "prompt": 0.25 / 1_000_000,
+    "response": 1.25 / 1_000_000,
+}
+
 
 def claude_pricing(model: str, prompt: bool) -> Optional[float]:
     if "instant" in model:
         pricing = CLAUDE_INSTANT_PRICE_PER_TOKEN
-    else:
+    elif "claude-3" in model:
+        if "opus" in model:
+            pricing = CLAUDE_3_OPUS_PRICING
+        elif "sonnet" in model:
+            pricing = CLAUDE_3_SONNET_PRICING
+        elif "haiku" in model:
+            pricing = CLAUDE_3_HAIKU_PRICING
+        else:
+            return None
+    elif "claude-2" in model:
         pricing = CLAUDE_PRICE_PER_TOKEN
+    else:
+        return None
     return pricing.get("prompt" if prompt else "response")
 
 
