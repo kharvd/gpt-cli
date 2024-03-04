@@ -36,25 +36,30 @@ class AnthropicCompletionProvider(CompletionProvider):
         self, messages: List[Message], args: dict, stream: bool = False
     ) -> Iterator[str]:
         kwargs = {
-            "prompt": make_prompt(messages),
             "stop_sequences": [anthropic.HUMAN_PROMPT],
-            "max_tokens_to_sample": 4096,
+            "max_tokens": 4096,
             "model": args["model"],
         }
+
         if "temperature" in args:
             kwargs["temperature"] = args["temperature"]
         if "top_p" in args:
             kwargs["top_p"] = args["top_p"]
 
+        if len(messages) > 0 and messages[0]["role"] == "system":
+            kwargs["system"] = messages[0]["content"]
+            messages = messages[1:]
+
+        kwargs["messages"] = messages
+
         client = get_client()
         if stream:
-            response = client.completions.create(**kwargs, stream=True)
+            with client.messages.stream(**kwargs) as stream:
+                for text in stream.text_stream:
+                    yield text
         else:
-            response = [client.completions.create(**kwargs, stream=False)]
-
-        for data in response:
-            next_completion = data.completion
-            yield next_completion
+            response = client.messages.create(**kwargs, stream=False)
+            yield "".join(c.text for c in response.content)
 
 
 def num_tokens_from_messages_anthropic(messages: List[Message], model: str) -> int:
