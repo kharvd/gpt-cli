@@ -4,6 +4,8 @@ from gptcli.assistant import Assistant
 from gptcli.completion import Message, ModelOverrides
 from openai import BadRequestError, OpenAIError
 from typing import Any, Dict, List, Tuple
+import tempfile
+import subprocess
 
 
 class ResponseStreamer:
@@ -57,12 +59,14 @@ COMMAND_CLEAR = (":clear", ":c")
 COMMAND_QUIT = (":quit", ":q")
 COMMAND_RERUN = (":rerun", ":r")
 COMMAND_HELP = (":help", ":h", ":?")
+COMMAND_EDIT = (":edit", ":e")
 ALL_COMMANDS = [*COMMAND_CLEAR, *COMMAND_QUIT, *COMMAND_RERUN, *COMMAND_HELP]
 COMMANDS_HELP = """
 Commands:
 - `:clear` / `:c` / Ctrl+C - Clear the conversation.
 - `:quit` / `:q` / Ctrl+D - Quit the program.
 - `:rerun` / `:r` / Ctrl+R - Re-run the last message.
+- `:edit` / `:e` / Edit the current message in default editor.
 - `:help` / `:h` / `:?` - Show this help message.
 """
 
@@ -72,16 +76,38 @@ class ChatSession:
         self,
         assistant: Assistant,
         listener: ChatListener,
+        editor: str = None,
     ):
         self.assistant = assistant
         self.messages: List[Message] = assistant.init_messages()
         self.user_prompts: List[Tuple[Message, ModelOverrides]] = []
         self.listener = listener
+        self.editor = editor
 
     def _clear(self):
         self.messages = self.assistant.init_messages()
         self.user_prompts = []
         self.listener.on_chat_clear()
+
+    def _edit_message(self, args):
+        if self.editor is None:
+            self.listener.on_error(
+                InvalidArgumentError(
+                    f"No default_editor set in config."
+                )
+            )
+            return False
+
+        with tempfile.NamedTemporaryFile(mode='w+') as temp_file:
+            #temp_file.write('Initial text')
+            #temp_file.flush()
+            subprocess.run([self.editor, temp_file.name])
+            temp_file.seek(0)
+            edited_text = temp_file.read().strip()
+        print(edited_text)
+        self._add_user_message(edited_text, args)
+        self._respond(args)
+        return
 
     def _rerun(self):
         if len(self.user_prompts) == 0:
@@ -166,6 +192,9 @@ class ChatSession:
             return True
         elif user_input in COMMAND_RERUN:
             self._rerun()
+            return True
+        elif user_input in COMMAND_EDIT:
+            self._edit_message(args)
             return True
         elif user_input in COMMAND_HELP:
             self._print_help()

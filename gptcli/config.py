@@ -22,6 +22,7 @@ class GptCliConfig:
     openai_api_key: Optional[str] = os.environ.get("OPENAI_API_KEY")
     anthropic_api_key: Optional[str] = os.environ.get("ANTHROPIC_API_KEY")
     google_api_key: Optional[str] = os.environ.get("GOOGLE_API_KEY")
+    default_editor: Optional[str] = os.environ.get("GPT_CLI_DEFAULT_EDITOR")
     log_file: Optional[str] = None
     log_level: str = "INFO"
     assistants: Dict[str, AssistantConfig] = {}
