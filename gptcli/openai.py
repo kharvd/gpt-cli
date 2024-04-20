@@ -10,7 +10,7 @@ from gptcli.completion import CompletionProvider, Message
 
 class OpenAICompletionProvider(CompletionProvider):
     def __init__(self):
-        self.client = OpenAI(api_key=openai.api_key)
+        self.client = OpenAI(api_key=openai.api_key, base_url=openai.base_url)
 
     def complete(
         self, messages: List[Message], args: dict, stream: bool = False
