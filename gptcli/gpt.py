@@ -168,6 +168,9 @@ def main():
         # Disable overly verbose logging for markdown_it
         logging.getLogger("markdown_it").setLevel(logging.INFO)
 
+    if config.openai_base_url:
+        openai.base_url = config.openai_base_url
+
     if config.api_key:
         openai.api_key = config.api_key
     elif config.openai_api_key:
