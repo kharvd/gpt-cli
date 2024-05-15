@@ -1,8 +1,14 @@
 from abc import abstractmethod
 from typing_extensions import TypeGuard
 from gptcli.assistant import Assistant
-from gptcli.completion import Message, ModelOverrides, CompletionError, BadRequestError
-from typing import Any, Dict, List, Tuple
+from gptcli.completion import (
+    Message,
+    ModelOverrides,
+    CompletionError,
+    BadRequestError,
+    UsageEvent,
+)
+from typing import Any, Dict, List, Optional, Tuple
 
 
 class ResponseStreamer:
@@ -36,7 +42,11 @@ class ChatListener:
         pass
 
     def on_chat_response(
-        self, messages: List[Message], response: Message, overrides: ModelOverrides
+        self,
+        messages: List[Message],
+        response: Message,
+        overrides: ModelOverrides,
+        usage: Optional[UsageEvent] = None,
     ):
         pass
 
@@ -94,20 +104,25 @@ class ChatSession:
         _, args = self.user_prompts[-1]
         self._respond(args)
 
-    def _respond(self, args: ModelOverrides) -> bool:
+    def _respond(self, overrides: ModelOverrides) -> bool:
         """
         Respond to the user's input and return whether the assistant's response was saved.
         """
         next_response: str = ""
+        usage: Optional[UsageEvent] = None
         try:
             completion_iter = self.assistant.complete_chat(
-                self.messages, override_params=args
+                self.messages, override_params=overrides
             )
 
             with self.listener.response_streamer() as stream:
-                for response in completion_iter:
-                    next_response += response
-                    stream.on_next_token(response)
+                for event in completion_iter:
+                    if event.type == "message_delta":
+                        next_response += event.text
+                        stream.on_next_token(event.text)
+                    elif event.type == "usage":
+                        usage = event
+
         except KeyboardInterrupt:
             # If the user interrupts the chat completion, we'll just return what we have so far
             pass
@@ -120,7 +135,7 @@ class ChatSession:
 
         next_message: Message = {"role": "assistant", "content": next_response}
         self.listener.on_chat_message(next_message)
-        self.listener.on_chat_response(self.messages, next_message, args)
+        self.listener.on_chat_response(self.messages, next_message, overrides, usage)
 
         self.messages = self.messages + [next_message]
         return True

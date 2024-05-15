@@ -1,15 +1,18 @@
-from typing import Iterator, List, cast
+import re
+from typing import Iterator, List, Optional, cast
 import openai
 from openai import OpenAI
 from openai.types.chat import ChatCompletionMessageParam
 
-import tiktoken
-
 from gptcli.completion import (
+    CompletionEvent,
     CompletionProvider,
     Message,
     CompletionError,
     BadRequestError,
+    MessageDeltaEvent,
+    Pricing,
+    UsageEvent,
 )
 
 
@@ -19,7 +22,7 @@ class OpenAICompletionProvider(CompletionProvider):
 
     def complete(
         self, messages: List[Message], args: dict, stream: bool = False
-    ) -> Iterator[str]:
+    ) -> Iterator[CompletionEvent]:
         kwargs = {}
         if "temperature" in args:
             kwargs["temperature"] = args["temperature"]
@@ -32,13 +35,25 @@ class OpenAICompletionProvider(CompletionProvider):
                     messages=cast(List[ChatCompletionMessageParam], messages),
                     stream=True,
                     model=args["model"],
+                    stream_options={"include_usage": True},
                     **kwargs,
                 )
 
                 for response in response_iter:
-                    next_choice = response.choices[0]
-                    if next_choice.finish_reason is None and next_choice.delta.content:
-                        yield next_choice.delta.content
+                    if (
+                        len(response.choices) > 0
+                        and response.choices[0].finish_reason is None
+                        and response.choices[0].delta.content
+                    ):
+                        yield MessageDeltaEvent(response.choices[0].delta.content)
+
+                    if response.usage and (pricing := gpt_pricing(args["model"])):
+                        yield UsageEvent.with_pricing(
+                            prompt_tokens=response.usage.prompt_tokens,
+                            completion_tokens=response.usage.completion_tokens,
+                            total_tokens=response.usage.total_tokens,
+                            pricing=pricing,
+                        )
             else:
                 response = self.client.chat.completions.create(
                     messages=cast(List[ChatCompletionMessageParam], messages),
@@ -48,27 +63,64 @@ class OpenAICompletionProvider(CompletionProvider):
                 )
                 next_choice = response.choices[0]
                 if next_choice.message.content:
-                    yield next_choice.message.content
+                    yield MessageDeltaEvent(next_choice.message.content)
+                if response.usage and (pricing := gpt_pricing(args["model"])):
+                    yield UsageEvent.with_pricing(
+                        prompt_tokens=response.usage.prompt_tokens,
+                        completion_tokens=response.usage.completion_tokens,
+                        total_tokens=response.usage.total_tokens,
+                        pricing=pricing,
+                    )
+
         except openai.BadRequestError as e:
             raise BadRequestError(e.message) from e
         except openai.APIError as e:
             raise CompletionError(e.message) from e
 
 
-def num_tokens_from_messages_openai(messages: List[Message], model: str) -> int:
-    encoding = tiktoken.encoding_for_model(model)
-    num_tokens = 0
-    for message in messages:
-        # every message follows <im_start>{role/name}\n{content}<im_end>\n
-        num_tokens += 4
-        for key, value in message.items():
-            assert isinstance(value, str)
-            num_tokens += len(encoding.encode(value))
-            if key == "name":  # if there's a name, the role is omitted
-                num_tokens += -1  # role is always required and always 1 token
-    num_tokens += 2  # every reply is primed with <im_start>assistant
-    return num_tokens
+GPT_3_5_TURBO_PRICE_PER_TOKEN: Pricing = {
+    "prompt": 0.50 / 1_000_000,
+    "response": 1.50 / 1_000_000,
+}
+
+GPT_3_5_TURBO_16K_PRICE_PER_TOKEN: Pricing = {
+    "prompt": 0.003 / 1000,
+    "response": 0.004 / 1000,
+}
+
+GPT_4_PRICE_PER_TOKEN: Pricing = {
+    "prompt": 30.0 / 1_000_000,
+    "response": 60.0 / 1_000_000,
+}
+
+GPT_4_TURBO_PRICE_PER_TOKEN: Pricing = {
+    "prompt": 10.0 / 1_000_000,
+    "response": 30.0 / 1_000_000,
+}
+
+GPT_4_32K_PRICE_PER_TOKEN: Pricing = {
+    "prompt": 60.0 / 1_000_000,
+    "response": 120.0 / 1_000_000,
+}
+
+GPT_4_O_PRICE_PER_TOKEN: Pricing = {
+    "prompt": 5.0 / 1_000_000,
+    "response": 15.0 / 1_000_000,
+}
 
 
-def num_tokens_from_completion_openai(completion: Message, model: str) -> int:
-    return num_tokens_from_messages_openai([completion], model)
+def gpt_pricing(model: str) -> Optional[Pricing]:
+    if model.startswith("gpt-3.5-turbo-16k"):
+        return GPT_3_5_TURBO_16K_PRICE_PER_TOKEN
+    elif model.startswith("gpt-3.5-turbo"):
+        return GPT_3_5_TURBO_PRICE_PER_TOKEN
+    elif model.startswith("gpt-4-32k"):
+        return GPT_4_32K_PRICE_PER_TOKEN
+    elif model.startswith("gpt-4o"):
+        return GPT_4_O_PRICE_PER_TOKEN
+    elif model.startswith("gpt-4-turbo") or re.match(r"gpt-4-\d\d\d\d-preview", model):
+        return GPT_4_TURBO_PRICE_PER_TOKEN
+    elif model.startswith("gpt-4"):
+        return GPT_4_PRICE_PER_TOKEN
+    else:
+        return None

@@ -1,12 +1,16 @@
 import os
-from typing import Iterator, List
+from typing import Iterator, List, Optional
 import anthropic
 
 from gptcli.completion import (
+    CompletionEvent,
     CompletionProvider,
     Message,
     CompletionError,
     BadRequestError,
+    MessageDeltaEvent,
+    Pricing,
+    UsageEvent,
 )
 
 api_key = os.environ.get("ANTHROPIC_API_KEY")
@@ -19,27 +23,10 @@ def get_client():
     return anthropic.Anthropic(api_key=api_key)
 
 
-def role_to_name(role: str) -> str:
-    if role == "system" or role == "user":
-        return anthropic.HUMAN_PROMPT
-    elif role == "assistant":
-        return anthropic.AI_PROMPT
-    else:
-        raise ValueError(f"Unknown role: {role}")
-
-
-def make_prompt(messages: List[Message]) -> str:
-    prompt = "\n".join(
-        [f"{role_to_name(message['role'])}{message['content']}" for message in messages]
-    )
-    prompt += f"{role_to_name('assistant')}"
-    return prompt
-
-
 class AnthropicCompletionProvider(CompletionProvider):
     def complete(
         self, messages: List[Message], args: dict, stream: bool = False
-    ) -> Iterator[str]:
+    ) -> Iterator[CompletionEvent]:
         kwargs = {
             "stop_sequences": [anthropic.HUMAN_PROMPT],
             "max_tokens": 4096,
@@ -58,26 +45,84 @@ class AnthropicCompletionProvider(CompletionProvider):
         kwargs["messages"] = messages
 
         client = get_client()
+        input_tokens = None
         try:
             if stream:
                 with client.messages.stream(**kwargs) as completion:
-                    for text in completion.text_stream:
-                        yield text
+                    for event in completion:
+                        if event.type == "content_block_delta":
+                            yield MessageDeltaEvent(event.delta.text)
+                        if event.type == "message_start":
+                            input_tokens = event.message.usage.input_tokens
+                        if (
+                            event.type == "message_delta"
+                            and (pricing := claude_pricing(args["model"]))
+                            and input_tokens
+                        ):
+                            yield UsageEvent.with_pricing(
+                                prompt_tokens=input_tokens,
+                                completion_tokens=event.usage.output_tokens,
+                                total_tokens=input_tokens + event.usage.output_tokens,
+                                pricing=pricing,
+                            )
+
             else:
                 response = client.messages.create(**kwargs, stream=False)
-                yield "".join(c.text for c in response.content)
+                yield MessageDeltaEvent("".join(c.text for c in response.content))
+                if pricing := claude_pricing(args["model"]):
+                    yield UsageEvent.with_pricing(
+                        prompt_tokens=response.usage.input_tokens,
+                        completion_tokens=response.usage.output_tokens,
+                        total_tokens=response.usage.input_tokens
+                        + response.usage.output_tokens,
+                        pricing=pricing,
+                    )
         except anthropic.BadRequestError as e:
             raise BadRequestError(e.message) from e
         except anthropic.APIError as e:
             raise CompletionError(e.message) from e
 
 
-def num_tokens_from_messages_anthropic(messages: List[Message], model: str) -> int:
-    prompt = make_prompt(messages)
-    client = get_client()
-    return client.count_tokens(prompt)
+CLAUDE_PRICE_PER_TOKEN: Pricing = {
+    "prompt": 11.02 / 1_000_000,
+    "response": 32.68 / 1_000_000,
+}
+
+CLAUDE_INSTANT_PRICE_PER_TOKEN: Pricing = {
+    "prompt": 1.63 / 1_000_000,
+    "response": 5.51 / 1_000_000,
+}
+
+CLAUDE_3_OPUS_PRICING: Pricing = {
+    "prompt": 15.0 / 1_000_000,
+    "response": 75.0 / 1_000_000,
+}
+
+CLAUDE_3_SONNET_PRICING: Pricing = {
+    "prompt": 3.0 / 1_000_000,
+    "response": 15.0 / 1_000_000,
+}
+
+CLAUDE_3_HAIKU_PRICING: Pricing = {
+    "prompt": 0.25 / 1_000_000,
+    "response": 1.25 / 1_000_000,
+}
 
 
-def num_tokens_from_completion_anthropic(message: Message, model: str) -> int:
-    client = get_client()
-    return client.count_tokens(message["content"])
+def claude_pricing(model: str) -> Optional[Pricing]:
+    if "instant" in model:
+        pricing = CLAUDE_INSTANT_PRICE_PER_TOKEN
+    elif "claude-3" in model:
+        if "opus" in model:
+            pricing = CLAUDE_3_OPUS_PRICING
+        elif "sonnet" in model:
+            pricing = CLAUDE_3_SONNET_PRICING
+        elif "haiku" in model:
+            pricing = CLAUDE_3_HAIKU_PRICING
+        else:
+            return None
+    elif "claude-2" in model:
+        pricing = CLAUDE_PRICE_PER_TOKEN
+    else:
+        return None
+    return pricing
