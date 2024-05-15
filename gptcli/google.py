@@ -1,6 +1,11 @@
 from typing import Iterator, List
 import google.generativeai as genai
-from gptcli.completion import CompletionProvider, Message
+from gptcli.completion import (
+    CompletionEvent,
+    CompletionProvider,
+    Message,
+    MessageDeltaEvent,
+)
 
 
 def role_to_author(role: str) -> str:
@@ -28,7 +33,7 @@ def make_prompt(messages: List[Message]):
 class GoogleCompletionProvider(CompletionProvider):
     def complete(
         self, messages: List[Message], args: dict, stream: bool = False
-    ) -> Iterator[str]:
+    ) -> Iterator[CompletionEvent]:
         context, prompt = make_prompt(messages)
         kwargs = {
             "context": context,
@@ -40,4 +45,4 @@ class GoogleCompletionProvider(CompletionProvider):
             kwargs["top_p"] = args["top_p"]
 
         response = genai.chat(**kwargs)
-        yield response.last
+        yield MessageDeltaEvent(response.last)
