@@ -175,11 +175,6 @@ def main():
         openai.api_key = config.api_key
     elif config.openai_api_key:
         openai.api_key = config.openai_api_key
-    else:
-        print(
-            "No API key found. Please set the OPENAI_API_KEY environment variable or `api_key: <key>` value in ~/.config/gpt-cli/gpt.yml"
-        )
-        sys.exit(1)
 
     if config.anthropic_api_key:
         gptcli.anthropic.api_key = config.anthropic_api_key
