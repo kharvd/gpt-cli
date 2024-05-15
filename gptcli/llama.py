@@ -9,7 +9,12 @@ try:
 except ImportError:
     LLAMA_AVAILABLE = False
 
-from gptcli.completion import CompletionProvider, Message
+from gptcli.completion import (
+    CompletionEvent,
+    CompletionProvider,
+    Message,
+    MessageDeltaEvent,
+)
 
 
 class LLaMAModelConfig(TypedDict):
@@ -64,7 +69,7 @@ def make_prompt(messages: List[Message], model_config: LLaMAModelConfig) -> str:
 class LLaMACompletionProvider(CompletionProvider):
     def complete(
         self, messages: List[Message], args: dict, stream: bool = False
-    ) -> Iterator[str]:
+    ) -> Iterator[CompletionEvent]:
         assert LLAMA_MODELS, "LLaMA models not initialized"
 
         model_config = LLAMA_MODELS[args["model"]]
@@ -95,9 +100,9 @@ class LLaMACompletionProvider(CompletionProvider):
         )
         if stream:
             for x in cast(Iterator[CompletionChunk], gen):
-                yield x["choices"][0]["text"]
+                yield MessageDeltaEvent(x["choices"][0]["text"])
         else:
-            yield cast(Completion, gen)["choices"][0]["text"]
+            yield MessageDeltaEvent(cast(Completion, gen)["choices"][0]["text"])
 
 
 # https://stackoverflow.com/a/50438156

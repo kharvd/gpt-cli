@@ -4,7 +4,12 @@ from attr import dataclass
 import platform
 from typing import Any, Dict, Iterator, Optional, TypedDict, List
 
-from gptcli.completion import CompletionProvider, ModelOverrides, Message
+from gptcli.completion import (
+    CompletionEvent,
+    CompletionProvider,
+    ModelOverrides,
+    Message,
+)
 from gptcli.google import GoogleCompletionProvider
 from gptcli.llama import LLaMACompletionProvider
 from gptcli.openai import OpenAICompletionProvider
@@ -106,7 +111,7 @@ class Assistant:
 
     def complete_chat(
         self, messages, override_params: ModelOverrides = {}, stream: bool = True
-    ) -> Iterator[str]:
+    ) -> Iterator[CompletionEvent]:
         model = self._param("model", override_params)
         completion_provider = get_completion_provider(model)
         return completion_provider.complete(
