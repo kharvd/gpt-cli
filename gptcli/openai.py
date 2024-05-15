@@ -5,7 +5,12 @@ from openai.types.chat import ChatCompletionMessageParam
 
 import tiktoken
 
-from gptcli.completion import CompletionProvider, Message
+from gptcli.completion import (
+    CompletionProvider,
+    Message,
+    CompletionError,
+    BadRequestError,
+)
 
 
 class OpenAICompletionProvider(CompletionProvider):
@@ -21,28 +26,33 @@ class OpenAICompletionProvider(CompletionProvider):
         if "top_p" in args:
             kwargs["top_p"] = args["top_p"]
 
-        if stream:
-            response_iter = self.client.chat.completions.create(
-                messages=cast(List[ChatCompletionMessageParam], messages),
-                stream=True,
-                model=args["model"],
-                **kwargs,
-            )
+        try:
+            if stream:
+                response_iter = self.client.chat.completions.create(
+                    messages=cast(List[ChatCompletionMessageParam], messages),
+                    stream=True,
+                    model=args["model"],
+                    **kwargs,
+                )
 
-            for response in response_iter:
+                for response in response_iter:
+                    next_choice = response.choices[0]
+                    if next_choice.finish_reason is None and next_choice.delta.content:
+                        yield next_choice.delta.content
+            else:
+                response = self.client.chat.completions.create(
+                    messages=cast(List[ChatCompletionMessageParam], messages),
+                    model=args["model"],
+                    stream=False,
+                    **kwargs,
+                )
                 next_choice = response.choices[0]
-                if next_choice.finish_reason is None and next_choice.delta.content:
-                    yield next_choice.delta.content
-        else:
-            response = self.client.chat.completions.create(
-                messages=cast(List[ChatCompletionMessageParam], messages),
-                model=args["model"],
-                stream=False,
-                **kwargs,
-            )
-            next_choice = response.choices[0]
-            if next_choice.message.content:
-                yield next_choice.message.content
+                if next_choice.message.content:
+                    yield next_choice.message.content
+        except openai.BadRequestError as e:
+            raise BadRequestError(e.message) from e
+        except openai.APIError as e:
+            raise CompletionError(e.message) from e
 
 
 def num_tokens_from_messages_openai(messages: List[Message], model: str) -> int:

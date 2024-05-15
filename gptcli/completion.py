@@ -19,3 +19,11 @@ class CompletionProvider:
         self, messages: List[Message], args: dict, stream: bool = False
     ) -> Iterator[str]:
         pass
+
+
+class CompletionError(Exception):
+    pass
+
+
+class BadRequestError(CompletionError):
+    pass

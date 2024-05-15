@@ -1,8 +1,7 @@
 from abc import abstractmethod
 from typing_extensions import TypeGuard
 from gptcli.assistant import Assistant
-from gptcli.completion import Message, ModelOverrides
-from openai import BadRequestError, OpenAIError
+from gptcli.completion import Message, ModelOverrides, CompletionError, BadRequestError
 from typing import Any, Dict, List, Tuple
 
 
@@ -115,7 +114,7 @@ class ChatSession:
         except BadRequestError as e:
             self.listener.on_error(e)
             return False
-        except OpenAIError as e:
+        except CompletionError as e:
             self.listener.on_error(e)
             return True
 

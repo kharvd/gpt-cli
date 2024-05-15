@@ -2,7 +2,12 @@ import os
 from typing import Iterator, List
 import anthropic
 
-from gptcli.completion import CompletionProvider, Message
+from gptcli.completion import (
+    CompletionProvider,
+    Message,
+    CompletionError,
+    BadRequestError,
+)
 
 api_key = os.environ.get("ANTHROPIC_API_KEY")
 
@@ -53,13 +58,18 @@ class AnthropicCompletionProvider(CompletionProvider):
         kwargs["messages"] = messages
 
         client = get_client()
-        if stream:
-            with client.messages.stream(**kwargs) as stream:
-                for text in stream.text_stream:
-                    yield text
-        else:
-            response = client.messages.create(**kwargs, stream=False)
-            yield "".join(c.text for c in response.content)
+        try:
+            if stream:
+                with client.messages.stream(**kwargs) as completion:
+                    for text in completion.text_stream:
+                        yield text
+            else:
+                response = client.messages.create(**kwargs, stream=False)
+                yield "".join(c.text for c in response.content)
+        except anthropic.BadRequestError as e:
+            raise BadRequestError(e.message) from e
+        except anthropic.APIError as e:
+            raise CompletionError(e.message) from e
 
 
 def num_tokens_from_messages_anthropic(messages: List[Message], model: str) -> int:
