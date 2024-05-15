@@ -63,7 +63,9 @@ def parse_args(config: GptCliConfig):
         default=config.default_assistant,
         nargs="?",
         choices=list(set([*DEFAULT_ASSISTANTS.keys(), *config.assistants.keys()])),
-        help="The name of assistant to use. `general` (default) is a generally helpful assistant, `dev` is a software development assistant with shorter responses. You can specify your own assistants in the config file ~/.config/gpt-cli/gpt.yml. See the README for more information.",
+        help="The name of assistant to use. `general` (default) is a generally helpful assistant, `dev` is a software \
+development assistant with shorter responses. You can specify your own assistants in the config file \
+~/.config/gpt-cli/gpt.yml. See the README for more information.",
     )
     parser.add_argument(
         "--no_markdown",
@@ -82,7 +84,8 @@ def parse_args(config: GptCliConfig):
         "--temperature",
         type=float,
         default=None,
-        help="The temperature to use for the chat session. Overrides the default temperature defined for the assistant.",
+        help="The temperature to use for the chat session. Overrides the default temperature defined \
+for the assistant.",
     )
     parser.add_argument(
         "--top_p",
@@ -109,20 +112,24 @@ def parse_args(config: GptCliConfig):
         type=str,
         action="append",
         default=None,
-        help="If specified, will not start an interactive chat session and instead will print the response to standard output and exit. May be specified multiple times. Use `-` to read the prompt from standard input. Implies --no_markdown.",
+        help="If specified, will not start an interactive chat session and instead will print the response to standard \
+output and exit. May be specified multiple times. Use `-` to read the prompt from standard input. \
+Implies --no_markdown.",
     )
     parser.add_argument(
         "--execute",
         "-e",
         type=str,
         default=None,
-        help="If specified, passes the prompt to the assistant and allows the user to edit the produced shell command before executing it. Implies --no_stream. Use `-` to read the prompt from standard input.",
+        help="If specified, passes the prompt to the assistant and allows the user to edit the produced shell command \
+before executing it. Implies --no_stream. Use `-` to read the prompt from standard input.",
     )
     parser.add_argument(
         "--no_stream",
         action="store_true",
         default=False,
-        help="If specified, will not stream the response to standard output. This is useful if you want to use the response in a script. Ignored when the --prompt option is not specified.",
+        help="If specified, will not stream the response to standard output. This is useful if you want to use the \
+response in a script. Ignored when the --prompt option is not specified.",
     )
     parser.add_argument(
         "--no_price",

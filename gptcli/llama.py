@@ -24,7 +24,8 @@ LLAMA_MODELS: Optional[dict[str, LLaMAModelConfig]] = None
 def init_llama_models(models: dict[str, LLaMAModelConfig]):
     if not LLAMA_AVAILABLE:
         print(
-            "Error: To use llama, you need to install gpt-command-line with the llama optional dependency: pip install gpt-command-line[llama]."
+            "Error: To use llama, you need to install gpt-command-line with the llama optional dependency: \
+pip install gpt-command-line[llama]."
         )
         sys.exit(1)
 

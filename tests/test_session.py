@@ -1,8 +1,5 @@
 from unittest import mock
-import httpx
-
 from gptcli.completion import CompletionError, BadRequestError
-
 from gptcli.session import ChatSession
 
 system_message = {"role": "system", "content": "system message"}

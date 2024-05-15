@@ -1,5 +1,5 @@
 import os
-from typing import Dict, List, Optional, TypedDict
+from typing import Dict, List, Optional
 from attr import dataclass
 import yaml
 
