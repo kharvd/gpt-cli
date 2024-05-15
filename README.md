@@ -21,16 +21,19 @@ Command-line interface for ChatGPT Claude and Bard.
 ## Installation
 
 This install assumes a Linux/OSX machine with Python and pip available.
+
 ```bash
 pip install gpt-command-line
 ```
 
 Install latest version from source:
+
 ```bash
 pip install git+https://github.com/kharvd/gpt-cli.git
 ```
 
 Or install by cloning the repository manually:
+
 ```bash
 git clone https://github.com/kharvd/gpt-cli.git
 cd gpt-cli
@@ -173,12 +176,22 @@ Ahoy, matey! What be bringing ye to these here waters? Be it treasure or adventu
 ```
 
 ### Customize OpenAI API URL
-If you are using other models compatible with the OpenAI Python SDK, you can configure them by modifying the `openai_base_url` setting in the config file or using the `OPENAI_BASE_URL` environment variable .  
+
+If you are using other models compatible with the OpenAI Python SDK, you can configure them by modifying the `openai_base_url` setting in the config file or using the `OPENAI_BASE_URL` environment variable .
 
 Example:
+
 ```
 openai_base_url: https://your-custom-api-url.com/v1
 ```
+
+Use `oai-compat:` prefix for the model name to pass non-GPT model names to the API. For example, to chat with Llama3-70b on [https://together.ai](Together), use the following command:
+
+```bash
+OPENAI_API_KEY=$TOGETHER_API_KEY OPENAI_BASE_URL=https://api.together.xyz/v1 gpt general --model oai-compat:meta-llama/Llama-3-70b-chat-hf
+```
+
+The prefix is stripped before sending the request to the API.
 
 ## Other chat bots
 
@@ -203,17 +216,21 @@ gpt --model claude-v1
 ```
 
 ### Google Bard (PaLM 2)
+
 Similar to Claude, set the Google API key
 
 ```bash
 export GOOGLE_API_KEY=<your_key_here>
 ```
+
 or a config line:
+
 ```yaml
 google_api_key: <your_key_here>
 ```
 
 Run `gpt` with the correct model:
+
 ```bash
 gpt --model chat-bison-001
 ```

@@ -29,12 +29,16 @@ class OpenAICompletionProvider(CompletionProvider):
         if "top_p" in args:
             kwargs["top_p"] = args["top_p"]
 
+        model = args["model"]
+        if model.startswith("oai-compat:"):
+            model = model[len("oai-compat:") :]
+
         try:
             if stream:
                 response_iter = self.client.chat.completions.create(
                     messages=cast(List[ChatCompletionMessageParam], messages),
                     stream=True,
-                    model=args["model"],
+                    model=model,
                     stream_options={"include_usage": True},
                     **kwargs,
                 )
@@ -57,7 +61,7 @@ class OpenAICompletionProvider(CompletionProvider):
             else:
                 response = self.client.chat.completions.create(
                     messages=cast(List[ChatCompletionMessageParam], messages),
-                    model=args["model"],
+                    model=model,
                     stream=False,
                     **kwargs,
                 )

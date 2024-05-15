@@ -66,7 +66,11 @@ User's `uname`: {platform.uname()}. User's `$SHELL`: {os.environ.get('SHELL')}."
 
 
 def get_completion_provider(model: str) -> CompletionProvider:
-    if model.startswith("gpt") or model.startswith("ft:gpt"):
+    if (
+        model.startswith("gpt")
+        or model.startswith("ft:gpt")
+        or model.startswith("oai-compat:")
+    ):
         return OpenAICompletionProvider()
     elif model.startswith("claude"):
         return AnthropicCompletionProvider()
