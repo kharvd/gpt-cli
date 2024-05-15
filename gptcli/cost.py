@@ -70,6 +70,11 @@ GPT_4_32K_PRICE_PER_TOKEN = {
     "response": 120.0 / 1_000_000,
 }
 
+GPT_4_O_PRICE_PER_TOKEN = {
+    "prompt": 5.0 / 1_000_000,
+    "response": 15.0 / 1_000_000,
+}
+
 
 def gpt_pricing(model: str, prompt: bool) -> Optional[float]:
     if model.startswith("gpt-3.5-turbo-16k"):
@@ -78,7 +83,9 @@ def gpt_pricing(model: str, prompt: bool) -> Optional[float]:
         pricing = GPT_3_5_TURBO_PRICE_PER_TOKEN
     elif model.startswith("gpt-4-32k"):
         pricing = GPT_4_32K_PRICE_PER_TOKEN
-    elif re.match(r"gpt-4-\d\d\d\d-preview", model):
+    elif model.startswith("gpt-4o"):
+        pricing = GPT_4_O_PRICE_PER_TOKEN
+    elif model.startswith("gpt-4-turbo") or re.match(r"gpt-4-\d\d\d\d-preview", model):
         pricing = GPT_4_TURBO_PRICE_PER_TOKEN
     elif model.startswith("gpt-4"):
         pricing = GPT_4_PRICE_PER_TOKEN
