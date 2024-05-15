@@ -1,5 +1,5 @@
 from unittest import mock
-from gptcli.completion import CompletionError, BadRequestError
+from gptcli.completion import CompletionError, BadRequestError, MessageDeltaEvent
 from gptcli.session import ChatSession
 
 system_message = {"role": "system", "content": "system message"}
@@ -30,7 +30,7 @@ def test_simple_input():
     assistant_mock, listener_mock, session = setup_session()
 
     expected_response = "assistant message"
-    assistant_mock.complete_chat.return_value = [expected_response]
+    assistant_mock.complete_chat.return_value = [MessageDeltaEvent(expected_response)]
 
     user_input = "user message"
     should_continue = session.process_input(user_input, {})
@@ -59,7 +59,7 @@ def test_clear():
     assistant_mock.init_messages.assert_called_once()
     assistant_mock.init_messages.reset_mock()
 
-    assistant_mock.complete_chat.return_value = ["assistant_message"]
+    assistant_mock.complete_chat.return_value = [MessageDeltaEvent("assistant_message")]
 
     should_continue = session.process_input("user_message", {})
     assert should_continue
@@ -84,7 +84,9 @@ def test_clear():
     listener_mock.on_chat_clear.assert_called_once()
     assistant_mock.complete_chat.assert_not_called()
 
-    assistant_mock.complete_chat.return_value = ["assistant_message_1"]
+    assistant_mock.complete_chat.return_value = [
+        MessageDeltaEvent("assistant_message_1")
+    ]
 
     should_continue = session.process_input("user_message_1", {})
     assert should_continue
@@ -119,7 +121,7 @@ def test_rerun():
     listener_mock.on_chat_rerun.reset_mock()
 
     # Now proper re-run
-    assistant_mock.complete_chat.return_value = ["assistant_message"]
+    assistant_mock.complete_chat.return_value = [MessageDeltaEvent("assistant_message")]
 
     should_continue = session.process_input("user_message", {})
     assert should_continue
@@ -137,7 +139,9 @@ def test_rerun():
     assistant_mock.complete_chat.reset_mock()
     listener_mock.on_chat_message.reset_mock()
 
-    assistant_mock.complete_chat.return_value = ["assistant_message_1"]
+    assistant_mock.complete_chat.return_value = [
+        MessageDeltaEvent("assistant_message_1")
+    ]
 
     should_continue = session.process_input(":r", {})
     assert should_continue
@@ -161,7 +165,7 @@ def test_args():
     assistant_mock.supported_overrides.return_value = ["arg1"]
 
     expected_response = "assistant message"
-    assistant_mock.complete_chat.return_value = [expected_response]
+    assistant_mock.complete_chat.return_value = [MessageDeltaEvent(expected_response)]
 
     user_input = "user message"
     should_continue = session.process_input(user_input, {"arg1": "value1"})
@@ -181,7 +185,7 @@ def test_args():
     assistant_mock.complete_chat.reset_mock()
     listener_mock.on_chat_message.reset_mock()
 
-    assistant_mock.complete_chat.return_value = [expected_response]
+    assistant_mock.complete_chat.return_value = [MessageDeltaEvent(expected_response)]
 
     should_continue = session.process_input(":r", {})
     assert should_continue
@@ -240,7 +244,7 @@ def test_openai_error():
     listener_mock.on_error.reset_mock()
 
     assistant_mock.complete_chat.side_effect = None
-    assistant_mock.complete_chat.return_value = ["assistant message"]
+    assistant_mock.complete_chat.return_value = [MessageDeltaEvent("assistant message")]
 
     should_continue = session.process_input(":r", {})
     assert should_continue
@@ -258,7 +262,9 @@ def test_openai_error():
 def test_stream():
     assistant_mock, listener_mock, session = setup_session()
     assistant_message = "assistant message"
-    assistant_mock.complete_chat.return_value = list(assistant_message)
+    assistant_mock.complete_chat.return_value = (
+        MessageDeltaEvent(tok) for tok in list(assistant_message)
+    )
 
     response_streamer_mock = listener_mock.response_streamer.return_value
 
