@@ -9,6 +9,7 @@ if sys.version_info < MIN_PYTHON:
 import os
 from typing import cast
 import openai
+import google.generativeai as genai
 import argparse
 import sys
 import logging
@@ -188,6 +189,9 @@ def main():
 
     if config.cohere_api_key:
         gptcli.providers.cohere.api_key = config.cohere_api_key
+
+    if config.google_api_key:
+        genai.configure(api_key=config.google_api_key)
 
     if config.llama_models is not None:
         init_llama_models(config.llama_models)

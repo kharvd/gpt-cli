@@ -10,6 +10,7 @@ from gptcli.completion import (
     ModelOverrides,
     Message,
 )
+from gptcli.providers.google import GoogleCompletionProvider
 from gptcli.providers.llama import LLaMACompletionProvider
 from gptcli.providers.openai import OpenAICompletionProvider
 from gptcli.providers.anthropic import AnthropicCompletionProvider
@@ -78,6 +79,8 @@ def get_completion_provider(model: str) -> CompletionProvider:
         return LLaMACompletionProvider()
     elif model.startswith("command") or model.startswith("c4ai"):
         return CohereCompletionProvider()
+    elif model.startswith("gemini"):
+        return GoogleCompletionProvider()
     else:
         raise ValueError(f"Unknown model: {model}")
 
