@@ -3,6 +3,7 @@ import sys
 from attr import dataclass
 import platform
 from typing import Any, Dict, Iterator, Optional, TypedDict, List
+from gptcli.cohere import CohereCompletionProvider
 
 from gptcli.completion import (
     CompletionEvent,
@@ -78,6 +79,8 @@ def get_completion_provider(model: str) -> CompletionProvider:
         return LLaMACompletionProvider()
     elif model.startswith("chat-bison"):
         return GoogleCompletionProvider()
+    elif model.startswith("command") or model.startswith("c4ai"):
+        return CohereCompletionProvider()
     else:
         raise ValueError(f"Unknown model: {model}")
 
