@@ -20,6 +20,7 @@ dependencies = [
     "anthropic==0.25.9",
     "attrs==23.2.0",
     "black==24.4.2",
+    "cohere==5.5.3",
     "mistralai==0.1.8",
     "google-generativeai==0.1.0",
     "openai==1.30.1",

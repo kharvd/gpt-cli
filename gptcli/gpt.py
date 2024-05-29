@@ -15,6 +15,7 @@ import logging
 import datetime
 import google.generativeai as genai
 import gptcli.anthropic
+import gptcli.cohere
 from gptcli.assistant import (
     Assistant,
     DEFAULT_ASSISTANTS,
@@ -188,6 +189,9 @@ def main():
 
     if config.google_api_key:
         genai.configure(api_key=config.google_api_key)
+
+    if config.cohere_api_key:
+        gptcli.cohere.api_key = config.cohere_api_key
 
     if config.llama_models is not None:
         init_llama_models(config.llama_models)
