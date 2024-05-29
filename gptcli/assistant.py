@@ -11,7 +11,6 @@ from gptcli.completion import (
     ModelOverrides,
     Message,
 )
-from gptcli.google import GoogleCompletionProvider
 from gptcli.llama import LLaMACompletionProvider
 from gptcli.openai import OpenAICompletionProvider
 from gptcli.anthropic import AnthropicCompletionProvider
@@ -77,8 +76,6 @@ def get_completion_provider(model: str) -> CompletionProvider:
         return AnthropicCompletionProvider()
     elif model.startswith("llama"):
         return LLaMACompletionProvider()
-    elif model.startswith("chat-bison"):
-        return GoogleCompletionProvider()
     elif model.startswith("command") or model.startswith("c4ai"):
         return CohereCompletionProvider()
     else:
