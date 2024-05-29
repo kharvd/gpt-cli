@@ -4,7 +4,7 @@ from attr import dataclass
 import yaml
 
 from gptcli.assistant import AssistantConfig
-from gptcli.llama import LLaMAModelConfig
+from gptcli.providers.llama import LLaMAModelConfig
 
 
 CONFIG_FILE_PATHS = [
