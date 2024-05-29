@@ -1,12 +1,12 @@
 [project]
 name = "gpt-command-line"
 version = "0.1.7"
-description = "Command-line interface for ChatGPT, Claude and Bard"
+description = "Command-line interface for ChatGPT and Claude"
 authors = [{name = "Val Kharitonov", email = "val@kharvd.com"}]
 readme = "README.md"
 license = {file = "LICENSE"}
 requires-python = ">=3.9"
-keywords = ["cli", "command-line", "assistant", "openai", "claude", "bard", "gpt-3", "gpt-4", "llm", "chatgpt", "gpt-cli", "google-bard", "anthropic", "gpt-client", "anthropic-claude", "palm2"]
+keywords = ["cli", "command-line", "assistant", "openai", "claude", "cohere", "gpt-3", "gpt-4", "llm", "chatgpt", "gpt-cli", "anthropic", "gpt-client", "anthropic-claude"]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Environment :: Console",
@@ -22,7 +22,6 @@ dependencies = [
     "black==24.4.2",
     "cohere==5.5.3",
     "mistralai==0.1.8",
-    "google-generativeai==0.1.0",
     "openai==1.30.1",
     "prompt-toolkit==3.0.43",
     "pytest==7.3.1",

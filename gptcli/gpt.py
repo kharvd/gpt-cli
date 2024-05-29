@@ -13,7 +13,6 @@ import argparse
 import sys
 import logging
 import datetime
-import google.generativeai as genai
 import gptcli.anthropic
 import gptcli.cohere
 from gptcli.assistant import (
@@ -186,9 +185,6 @@ def main():
 
     if config.anthropic_api_key:
         gptcli.anthropic.api_key = config.anthropic_api_key
-
-    if config.google_api_key:
-        genai.configure(api_key=config.google_api_key)
 
     if config.cohere_api_key:
         gptcli.cohere.api_key = config.cohere_api_key
