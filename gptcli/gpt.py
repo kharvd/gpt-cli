@@ -13,8 +13,8 @@ import argparse
 import sys
 import logging
 import datetime
-import gptcli.anthropic
-import gptcli.cohere
+import gptcli.providers.anthropic
+import gptcli.providers.cohere
 from gptcli.assistant import (
     Assistant,
     DEFAULT_ASSISTANTS,
@@ -32,7 +32,7 @@ from gptcli.config import (
     choose_config_file,
     read_yaml_config,
 )
-from gptcli.llama import init_llama_models
+from gptcli.providers.llama import init_llama_models
 from gptcli.logging import LoggingChatListener
 from gptcli.cost import PriceChatListener
 from gptcli.session import ChatSession
@@ -184,10 +184,10 @@ def main():
         openai.api_key = config.openai_api_key
 
     if config.anthropic_api_key:
-        gptcli.anthropic.api_key = config.anthropic_api_key
+        gptcli.providers.anthropic.api_key = config.anthropic_api_key
 
     if config.cohere_api_key:
-        gptcli.cohere.api_key = config.cohere_api_key
+        gptcli.providers.cohere.api_key = config.cohere_api_key
 
     if config.llama_models is not None:
         init_llama_models(config.llama_models)

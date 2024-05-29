@@ -3,7 +3,6 @@ import sys
 from attr import dataclass
 import platform
 from typing import Any, Dict, Iterator, Optional, TypedDict, List
-from gptcli.cohere import CohereCompletionProvider
 
 from gptcli.completion import (
     CompletionEvent,
@@ -11,9 +10,10 @@ from gptcli.completion import (
     ModelOverrides,
     Message,
 )
-from gptcli.llama import LLaMACompletionProvider
-from gptcli.openai import OpenAICompletionProvider
-from gptcli.anthropic import AnthropicCompletionProvider
+from gptcli.providers.llama import LLaMACompletionProvider
+from gptcli.providers.openai import OpenAICompletionProvider
+from gptcli.providers.anthropic import AnthropicCompletionProvider
+from gptcli.providers.cohere import CohereCompletionProvider
 
 
 class AssistantConfig(TypedDict, total=False):
