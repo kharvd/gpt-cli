@@ -6,8 +6,9 @@ Command-line interface for chat LLMs.
 
 - OpenAI
 - Anthropic
+- Google Gemini
 - Cohere
-- Other APIs compatible with OpenAI
+- Other APIs compatible with OpenAI (e.g. Together, OpenRouter, local models with LM Studio)
 
 ![screenshot](https://github.com/kharvd/gpt-cli/assets/466920/ecbcccc4-7cfa-4c04-83c3-a822b6596f01)
 
@@ -214,8 +215,32 @@ or a config line in `~/.config/gpt-cli/gpt.yml`:
 anthropic_api_key: <your_key_here>
 ```
 
-Now you should be able to run `gpt` with `--model claude-v1` or `--model claude-instant-v1`:
+Now you should be able to run `gpt` with `--model claude-3-(opus|sonnet|haiku)-<date>`.
 
 ```bash
-gpt --model claude-v1
+gpt --model claude-3-opus-20240229
+```
+
+### Google Gemini
+
+```bash
+export GOOGLE_API_KEY=<your_key_here>
+```
+
+or
+
+```yaml
+google_api_key: <your_key_here>
+```
+
+### Cohere
+
+```bash
+export COHERE_API_KEY=<your_key_here>
+```
+
+or
+
+```yaml
+cohere_api_key: <your_key_here>
 ```
