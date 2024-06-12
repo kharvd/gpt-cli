@@ -31,6 +31,9 @@ class ChatListener:
     def on_chat_rerun(self, success: bool):
         pass
 
+    def on_chat_back(self, x: int):
+        pass
+
     def on_error(self, error: Exception):
         pass
 
@@ -152,6 +155,7 @@ class ChatSession:
         Go back to user-assistant message pair x in the conversation. Following messages will be discarded.
         """
         self._rollback_user_message(x)
+        self.listener.on_chat_back(x)
 
     def _rollback_user_message(self, x: int = None):
         if x is None:
