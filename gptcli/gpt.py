@@ -34,7 +34,7 @@ from gptcli.config import (
     read_yaml_config,
 )
 from gptcli.providers.llama import init_llama_models
-from gptcli.logging import LoggingChatListener
+from gptcli.logging_utils import LoggingChatListener
 from gptcli.cost import PriceChatListener
 from gptcli.session import ChatSession
 from gptcli.shell import execute, simple_response
