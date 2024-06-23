@@ -16,6 +16,10 @@ def test_parse_args():
         "this is a prompt",
         {"bar": "1.0", "baz": "2.0"},
     )
+    assert parse_args("this is a prompt --bar 1.0") == (
+        "this is a prompt",
+        {"bar": "1.0"},
+    )
 
 
 def test_parse_with_escape_blocks():
@@ -28,6 +32,11 @@ def test_parse_with_escape_blocks():
         (
             "this is a prompt {start}--bar=1.0{end} --baz=2.0",
             "this is a prompt {start}--bar=1.0{end}",
+            {"baz": "2.0"},
+        ),
+        (
+            "this is a prompt {start}--bar 1.0{end} --baz 2.0",
+            "this is a prompt {start}--bar 1.0{end}",
             {"baz": "2.0"},
         ),
         (
