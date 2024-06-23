@@ -114,16 +114,23 @@ class CLIChatListener(ChatListener):
 
 
 def parse_args(input: str) -> Tuple[str, Dict[str, Any]]:
-    # Extract parts enclosed in triple backticks or triple quotes
+    # Extract parts enclosed in triple backticks, triple quotes, or single backticks
     extracted_parts = []
 
     def replacer(match):
-        # Use 'match.group(1) or match.group(2)' to handle either group being None
-        extracted_parts.append(match.group(1) or match.group(2))
+        # Determine if the part was enclosed in single backticks, triple backticks, or triple quotes
+        part = match.group(1) or match.group(2) or match.group(3)
+        if match.group(1):
+            delimiter = '```'
+        elif match.group(2):
+            delimiter = '"""'
+        else:
+            delimiter = '`'
+        extracted_parts.append((part, delimiter))
         return f"__EXTRACTED_PART_{len(extracted_parts)-1}__"
 
-    # Regex for triple backticks and triple quotes
-    pattern = re.compile(r'```(.*?)```|"""(.*?)"""', re.DOTALL)
+    # Regex for triple backticks, triple quotes, and single backticks
+    pattern = re.compile(r'```(.*?)```|"""(.*?)"""|`(.*?)`', re.DOTALL)
     input = pattern.sub(replacer, input)
 
     # Parse the remaining string for arguments
@@ -134,9 +141,9 @@ def parse_args(input: str) -> Tuple[str, Dict[str, Any]]:
         args = dict(matches)
         input = re.sub(regex, "", input).strip()
 
-    # Add back the extracted parts, sans the enclosing backticks or quotes
-    for i, part in enumerate(extracted_parts):
-        input = input.replace(f"__EXTRACTED_PART_{i}__", (part or '').strip())
+    # Add back the extracted parts, with enclosing backticks or quotes
+    for i, (part, delimiter) in enumerate(extracted_parts):
+        input = input.replace(f"__EXTRACTED_PART_{i}__", f"{delimiter}{part.strip()}{delimiter}")
 
     return input, args
 
