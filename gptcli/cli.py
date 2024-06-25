@@ -1,26 +1,19 @@
 import re
+from typing import Any, Dict, Optional, Tuple
+
+from openai import BadRequestError, OpenAIError
 from prompt_toolkit import PromptSession
 from prompt_toolkit.history import FileHistory
-from openai import OpenAIError, BadRequestError
 from prompt_toolkit.key_binding import KeyBindings, KeyPressEvent
 from prompt_toolkit.key_binding.bindings import named_commands
 from rich.console import Console
 from rich.live import Live
 from rich.markdown import Markdown
-from typing import Any, Dict, Optional, Tuple
-
 from rich.text import Text
-from gptcli.session import (
-    ALL_COMMANDS,
-    COMMAND_CLEAR,
-    COMMAND_QUIT,
-    COMMAND_RERUN,
-    ChatListener,
-    InvalidArgumentError,
-    ResponseStreamer,
-    UserInputProvider,
-)
 
+from gptcli.session import (ALL_COMMANDS, COMMAND_CLEAR, COMMAND_QUIT,
+                            COMMAND_RERUN, ChatListener, InvalidArgumentError,
+                            ResponseStreamer, UserInputProvider)
 
 TERMINAL_WELCOME = """
 Hi! I'm here to help. Type `:q` or Ctrl-D to exit, `:c` or Ctrl-C and Enter to clear
@@ -121,12 +114,38 @@ class CLIChatListener(ChatListener):
 
 
 def parse_args(input: str) -> Tuple[str, Dict[str, Any]]:
+    # Extract parts enclosed in specific delimiters (triple backticks, triple quotes, single backticks)
+    extracted_parts = []
+    delimiters = ['```', '"""', '`']
+
+    def replacer(match):
+        for i, delimiter in enumerate(delimiters):
+            part = match.group(i + 1)
+            if part is not None:
+                extracted_parts.append((part, delimiter))
+                break
+        return f"__EXTRACTED_PART_{len(extracted_parts) - 1}__"
+
+    # Construct the regex pattern dynamically from the delimiters list
+    pattern_fragments = [re.escape(d) + '(.*?)' + re.escape(d) for d in delimiters]
+    pattern = re.compile('|'.join(pattern_fragments), re.DOTALL)
+
+    input = pattern.sub(replacer, input)
+
+    # Parse the remaining string for arguments
     args = {}
-    regex = r"--(\w+)(?:\s+|=)([^\s]+)"
+    regex = r'--(\w+)(?:=(\S+)|\s+(\S+))?'
     matches = re.findall(regex, input)
+
     if matches:
-        args = dict(matches)
-        input = input.split("--")[0].strip()
+        for key, value1, value2 in matches:
+            value = value1 if value1 else value2 if value2 else ''
+            args[key] = value.strip("\"'")
+        input = re.sub(regex, "", input).strip()
+
+    # Add back the extracted parts, with enclosing backticks or quotes
+    for i, (part, delimiter) in enumerate(extracted_parts):
+        input = input.replace(f"__EXTRACTED_PART_{i}__", f"{delimiter}{part.strip()}{delimiter}")
 
     return input, args
 
