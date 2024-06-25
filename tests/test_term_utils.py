@@ -25,29 +25,40 @@ def test_parse_args():
 def test_parse_with_escape_blocks():
     test_cases = [
         (
+            # escaped text at end of prompt
             "this is a prompt --bar=1.0 {start}--baz=2.0{end}",
             "this is a prompt  {start}--baz=2.0{end}",
             {"bar": "1.0"},
         ),
         (
+            # escaped text in middle of prompt with equal assignment
             "this is a prompt {start}--bar=1.0{end} --baz=2.0",
             "this is a prompt {start}--bar=1.0{end}",
             {"baz": "2.0"},
         ),
         (
+            # escaped text in middle of prompt with space assignment
             "this is a prompt {start}--bar 1.0{end} --baz 2.0",
             "this is a prompt {start}--bar 1.0{end}",
             {"baz": "2.0"},
         ),
         (
+            # escaped text in multiple escape sequences
             'this is a prompt --bar=1.0 {start}my first context block{end} and then ```my second context block``` --baz=2.0',
             'this is a prompt  {start}my first context block{end} and then ```my second context block```',
             {'bar': '1.0', 'baz': '2.0'},
         ),
         (
+            # entire prompt is escaped
             "{start}this is a prompt --bar=1.0 --baz=2.0{end}",
             "{start}this is a prompt --bar=1.0 --baz=2.0{end}",
-            {}
+            {},
+        ),
+        (
+            # multi-line escaped text
+            "this is a prompt \n--bar=1.0 \n--baz=2.0 \n {start}another line \nmy final line{end}",
+            "this is a prompt \n \n \n {start}another line \nmy final line{end}",
+            {'bar': '1.0', 'baz': '2.0'},
         )
     ]
 
