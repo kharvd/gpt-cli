@@ -56,10 +56,11 @@ def test_parse_with_escape_blocks():
         ),
         (
             # multi-line escaped text
-            "this is a prompt \n--bar=1.0 \n--baz=2.0 \n {start}another line \nmy final line{end}",
-            "this is a prompt \n \n \n {start}another line \nmy final line{end}",
+            "this is a prompt \n--bar=1.0 --baz=2.0\n{start}--foo=3.0 \n another line \nmy final line{end}",
+            "this is a prompt \n \n{start}--foo=3.0 \n another line \nmy final line{end}",
             {'bar': '1.0', 'baz': '2.0'},
         )
+
     ]
 
     delimiters = ["```", '"""', "`"]
