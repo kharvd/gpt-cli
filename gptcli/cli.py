@@ -114,39 +114,15 @@ class CLIChatListener(ChatListener):
 
 
 def parse_args(input: str) -> Tuple[str, Dict[str, Any]]:
-    # Extract parts enclosed in specific delimiters (triple backticks, triple quotes, single backticks)
-    extracted_parts = []
-    delimiters = ['```', '"""', '`']
-
-    def replacer(match):
-        for i, delimiter in enumerate(delimiters):
-            part = match.group(i + 1)
-            if part is not None:
-                extracted_parts.append((part, delimiter))
-                break
-        return f"__EXTRACTED_PART_{len(extracted_parts) - 1}__"
-
-    # Construct the regex pattern dynamically from the delimiters list
-    pattern_fragments = [re.escape(d) + '(.*?)' + re.escape(d) for d in delimiters]
-    pattern = re.compile('|'.join(pattern_fragments), re.DOTALL)
-
-    input = pattern.sub(replacer, input)
-
-    # Parse the remaining string for arguments
-    args = {}
-    regex = r'--(\w+)(?:=(\S+)|\s+(\S+))?'
-    matches = re.findall(regex, input)
-
-    if matches:
-        for key, value1, value2 in matches:
-            value = value1 if value1 else value2 if value2 else ''
-            args[key] = value.strip("\"'")
-        input = re.sub(regex, "", input).strip()
-
-    # Add back the extracted parts, with enclosing backticks or quotes
-    for i, (part, delimiter) in enumerate(extracted_parts):
-        input = input.replace(f"__EXTRACTED_PART_{i}__", f"{delimiter}{part.strip()}{delimiter}")
-
+    # Pattern matches flags that start with -- or :, the flag name, a space or =
+    # deliminator, followed by an argument that begins with a letter and doesn't
+    # contain a space or = or a number
+    pattern = r"(?:--|:)(\w[^\s=]*)(?:[ =])(\w[^\s=]*|\d+[.]\d*)"
+    # Look for sequential flags that are space deliminated
+    arg_pattern = r"^(" + pattern + r"\s?)*"
+    args = re.findall(pattern, re.match(arg_pattern, input).group())
+    args = dict((k,v) for k,v in args)
+    input = re.sub(arg_pattern, "", input)
     return input, args
 
 
