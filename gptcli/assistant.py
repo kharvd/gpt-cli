@@ -71,6 +71,7 @@ def get_completion_provider(model: str) -> CompletionProvider:
         model.startswith("gpt")
         or model.startswith("ft:gpt")
         or model.startswith("oai-compat:")
+        or model.startswith("chatgpt")
     ):
         return OpenAICompletionProvider()
     elif model.startswith("claude"):

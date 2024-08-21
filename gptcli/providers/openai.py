@@ -107,9 +107,19 @@ GPT_4_32K_PRICE_PER_TOKEN: Pricing = {
     "response": 120.0 / 1_000_000,
 }
 
-GPT_4_O_PRICE_PER_TOKEN: Pricing = {
+GPT_4_O_2024_05_13_PRICE_PER_TOKEN: Pricing = {
     "prompt": 5.0 / 1_000_000,
     "response": 15.0 / 1_000_000,
+}
+
+GPT_4_O_2024_08_06_PRICE_PER_TOKEN: Pricing = {
+    "prompt": 2.50 / 1_000_000,
+    "response": 10.0 / 1_000_000,
+}
+
+GPT_4_O_MINI_PRICE_PER_TOKEN: Pricing = {
+    "prompt": 0.150 / 1_000_000,
+    "response": 0.600 / 1_000_000,
 }
 
 
@@ -120,8 +130,12 @@ def gpt_pricing(model: str) -> Optional[Pricing]:
         return GPT_3_5_TURBO_PRICE_PER_TOKEN
     elif model.startswith("gpt-4-32k"):
         return GPT_4_32K_PRICE_PER_TOKEN
+    elif model.startswith("gpt-4o-mini"):
+        return GPT_4_O_MINI_PRICE_PER_TOKEN
+    elif model.startswith("gpt-4o-2024-05-13") or model.startswith("chatgpt-4o-latest"):
+        return GPT_4_O_2024_05_13_PRICE_PER_TOKEN
     elif model.startswith("gpt-4o"):
-        return GPT_4_O_PRICE_PER_TOKEN
+        return GPT_4_O_2024_08_06_PRICE_PER_TOKEN
     elif model.startswith("gpt-4-turbo") or re.match(r"gpt-4-\d\d\d\d-preview", model):
         return GPT_4_TURBO_PRICE_PER_TOKEN
     elif model.startswith("gpt-4"):
