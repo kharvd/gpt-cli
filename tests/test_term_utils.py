@@ -4,72 +4,59 @@ from gptcli.cli import parse_args
 def test_parse_args():
     assert parse_args("foo") == ("foo", {})
     assert parse_args("foo bar") == ("foo bar", {})
-    assert parse_args("this is a prompt --bar 1.0") == (
-        "this is a prompt",
-        {"bar": "1.0"},
+    # Check with space delimitation
+    assert parse_args("--novelKey 2.0 foo bar") == (
+        "foo bar",
+        {"novelKey": "2.0"},
     )
-    assert parse_args("this is a prompt --bar 1.0 --baz    2.0") == (
-        "this is a prompt",
-        {"bar": "1.0", "baz": "2.0"},
+    # Check with equal elimination
+    assert parse_args("--novelKey=2.0 foo bar") == (
+        "foo bar",
+        {"novelKey": "2.0"},
     )
-    assert parse_args("this is a prompt --bar=1.0 --baz=2.0") == (
-        "this is a prompt",
-        {"bar": "1.0", "baz": "2.0"},
+    # String option
+    assert parse_args("--novelKey Tes:t-Str_i--ng foo bar") == (
+        "foo bar",
+        {"novelKey": "Tes:t-Str_i--ng"},
     )
-    assert parse_args("this is a prompt --bar 1.0") == (
-        "this is a prompt",
-        {"bar": "1.0"},
+    # Colon based flag
+    assert parse_args(":novelKey 2.0 foo bar") == (
+        "foo bar",
+        {"novelKey": "2.0"},
     )
-
-
-def test_parse_with_escape_blocks():
-    test_cases = [
-        (
-            # escaped text at end of prompt
-            "this is a prompt --bar=1.0 {start}--baz=2.0{end}",
-            "this is a prompt  {start}--baz=2.0{end}",
-            {"bar": "1.0"},
-        ),
-        (
-            # escaped text in middle of prompt with equal assignment
-            "this is a prompt {start}--bar=1.0{end} --baz=2.0",
-            "this is a prompt {start}--bar=1.0{end}",
-            {"baz": "2.0"},
-        ),
-        (
-            # escaped text in middle of prompt with space assignment
-            "this is a prompt {start}--bar 1.0{end} --baz 2.0",
-            "this is a prompt {start}--bar 1.0{end}",
-            {"baz": "2.0"},
-        ),
-        (
-            # escaped text in multiple escape sequences
-            'this is a prompt --bar=1.0 {start}my first context block{end} and then ```my second context block``` --baz=2.0',
-            'this is a prompt  {start}my first context block{end} and then ```my second context block```',
-            {'bar': '1.0', 'baz': '2.0'},
-        ),
-        (
-            # entire prompt is escaped
-            "{start}this is a prompt --bar=1.0 --baz=2.0{end}",
-            "{start}this is a prompt --bar=1.0 --baz=2.0{end}",
-            {},
-        ),
-        (
-            # multi-line escaped text
-            "this is a prompt \n--bar=1.0 --baz=2.0\n{start}--foo=3.0 \n another line \nmy final line{end}",
-            "this is a prompt \n \n{start}--foo=3.0 \n another line \nmy final line{end}",
-            {'bar': '1.0', 'baz': '2.0'},
-        )
-
-    ]
-
-    delimiters = ["```", '"""', "`"]
-
-    for start, end in [(d, d) for d in delimiters]:
-        for prompt, expected_prompt, expected_args in test_cases:
-            formatted_prompt = prompt.format(start=start, end=end)
-            formatted_expected_prompt = expected_prompt.format(start=start, end=end)
-            assert parse_args(formatted_prompt) == (
-                formatted_expected_prompt,
-                expected_args,
-            )
+    assert parse_args(":novelKey Tes:t-Str_i--ng foo bar") == (
+        "foo bar",
+        {"novelKey": "Tes:t-Str_i--ng"},
+    )
+    assert parse_args("--novelKey1=2.0 :novelKey2 Tes:t-Str_i--ng --novelKey3=fizz foo bar") == (
+        "foo bar",
+        {
+            "novelKey1": "2.0",
+            "novelKey2": "Tes:t-Str_i--ng",
+            "novelKey3": "fizz",
+        },
+    )
+    # Allow "flags" to appear in prompt
+    assert parse_args("--novelKey1=2.0 :novelKey2 Tes:t-Str_i--ng "\
+                      "--novelKey3=fizz foo bar --notAKey badVal") == (
+        "foo bar --notAKey badVal",
+        {
+            "novelKey1": "2.0",
+            "novelKey2": "Tes:t-Str_i--ng",
+            "novelKey3": "fizz",
+        },
+    )
+    # No key tests
+    assert parse_args("foobar --novelKey1=2.0 :novelKey2 Tes:t-Str_i--ng ") == (
+        "foobar --novelKey1=2.0 :novelKey2 Tes:t-Str_i--ng ", {}
+    )
+    assert parse_args("-- foobar --novelKey1=2.0 :novelKey2 Tes:t-Str_i--ng ") == (
+        "-- foobar --novelKey1=2.0 :novelKey2 Tes:t-Str_i--ng ", {}
+    )
+    assert parse_args(": foobar --novelKey1=2.0 :novelKey2 Tes:t-Str_i--ng ") == (
+        ": foobar --novelKey1=2.0 :novelKey2 Tes:t-Str_i--ng ", {}
+    )
+    # Other symbol
+    assert parse_args("*foobar --novelKey1=2.0 :novelKey2 Tes:t-Str_i--ng ") == (
+        "*foobar --novelKey1=2.0 :novelKey2 Tes:t-Str_i--ng ", {}
+    )
