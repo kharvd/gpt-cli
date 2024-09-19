@@ -23,6 +23,7 @@ class GptCliConfig:
     openai_base_url: Optional[str] = os.environ.get("OPENAI_BASE_URL")
     anthropic_api_key: Optional[str] = os.environ.get("ANTHROPIC_API_KEY")
     google_api_key: Optional[str] = os.environ.get("GOOGLE_API_KEY")
+    default_editor: Optional[str] = os.environ.get("VISUAL") or os.environ.get("EDITOR")
     cohere_api_key: Optional[str] = os.environ.get("COHERE_API_KEY")
     log_file: Optional[str] = None
     log_level: str = "INFO"
