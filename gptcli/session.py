@@ -112,7 +112,7 @@ class ChatSession:
         usage: Optional[UsageEvent] = None
         try:
             completion_iter = self.assistant.complete_chat(
-                self.messages, override_params=overrides
+                self.messages, override_params=overrides, stream=self.stream
             )
 
             with self.listener.response_streamer() as stream:
