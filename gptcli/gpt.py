@@ -140,6 +140,13 @@ response in a script. Ignored when the --prompt option is not specified.",
         default=config.show_price,
     )
     parser.add_argument(
+        "--no_welcome",
+        action="store_false",
+        dest="print_welcome",
+        help="Deactivate the welcome message being printed to the top of the terminal.",
+        default=config.print_welcome,
+    )
+    parser.add_argument(
         "--version",
         "-v",
         action="version",
@@ -230,9 +237,9 @@ def run_non_interactive(args, assistant):
 
 
 class CLIChatSession(ChatSession):
-    def __init__(self, assistant: Assistant, markdown: bool, show_price: bool):
+    def __init__(self, assistant: Assistant, markdown: bool, show_price: bool, print_welcome: bool):
         listeners = [
-            CLIChatListener(markdown),
+            CLIChatListener(markdown, print_welcome),
             LoggingChatListener(),
         ]
 
@@ -246,7 +253,7 @@ class CLIChatSession(ChatSession):
 def run_interactive(args, assistant):
     logger.info("Starting a new chat session. Assistant config: %s", assistant.config)
     session = CLIChatSession(
-        assistant=assistant, markdown=args.markdown, show_price=args.show_price
+        assistant=assistant, markdown=args.markdown, show_price=args.show_price, print_welcome=args.print_welcome
     )
     history_filename = os.path.expanduser("~/.config/gpt-cli/history")
     os.makedirs(os.path.dirname(history_filename), exist_ok=True)
