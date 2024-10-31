@@ -119,6 +119,38 @@ class Assistant:
         )
 
     def complete_chat(
+        self, messages, override_params: ModelOverrides = {}, stream: bool = True, tools=[], tool_choice=False
+    ) -> Iterator[str]:
+        model = self._param("model", override_params)
+        completion_provider = get_completion_provider(model)
+
+        try:
+            params = {
+                "model": model,
+                "temperature": float(self._param("temperature", override_params)),
+                "top_p": float(self._param("top_p", override_params)),
+            }
+            if tool_choice:
+                params["tool_choice"] = "required"
+            return completion_provider.complete(
+                messages,
+                params,
+                stream=stream,
+                tools=tools,
+            )
+        except:
+            return completion_provider.complete(
+                messages,
+                {
+                    "model": model,
+                    "temperature": float(self._param("temperature", override_params)),
+                    "top_p": float(self._param("top_p", override_params)),
+                },
+                stream=stream,
+            )
+
+
+    def OLDcomplete_chat(
         self, messages, override_params: ModelOverrides = {}, stream: bool = True
     ) -> Iterator[CompletionEvent]:
         model = self._param("model", override_params)
