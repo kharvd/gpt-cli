@@ -240,8 +240,7 @@ class CLIChatSession(ChatSession):
             listeners.append(PriceChatListener(assistant))
 
         listener = CompositeChatListener(listeners)
-        self.stream = stream
-        super().__init__(assistant, listener)
+        super().__init__(assistant, listener, stream)
 
 
 def run_interactive(args, assistant):

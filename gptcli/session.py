@@ -81,11 +81,13 @@ class ChatSession:
         self,
         assistant: Assistant,
         listener: ChatListener,
+        stream: bool = True,
     ):
         self.assistant = assistant
         self.messages: List[Message] = assistant.init_messages()
         self.user_prompts: List[Tuple[Message, ModelOverrides]] = []
         self.listener = listener
+        self.stream = stream
 
     def _clear(self):
         self.messages = self.assistant.init_messages()
