@@ -1,11 +1,11 @@
 import os
 from typing import Dict, List, Optional
-from attr import dataclass
+
 import yaml
+from attr import dataclass
 
 from gptcli.assistant import AssistantConfig
 from gptcli.providers.llama import LLaMAModelConfig
-
 
 CONFIG_FILE_PATHS = [
     os.path.join(os.path.expanduser("~"), ".config", "gpt-cli", "gpt.yml"),
@@ -38,9 +38,24 @@ def choose_config_file(paths: List[str]) -> str:
     return ""
 
 
+# Custom YAML Loader with !include support
+class CustomLoader(yaml.SafeLoader):
+    pass
+
+
+def include_constructor(loader, node):
+    # Get the file path from the node
+    file_path = loader.construct_scalar(node)
+    # Read and return the content of the included file
+    with open(file_path, "r") as include_file:
+        return include_file.read()
+
+
+# Register the !include constructor
+CustomLoader.add_constructor("!include", include_constructor)
+
+
 def read_yaml_config(file_path: str) -> GptCliConfig:
     with open(file_path, "r") as file:
-        config = yaml.safe_load(file)
-        return GptCliConfig(
-            **config,
-        )
+        config = yaml.load(file, Loader=CustomLoader)
+        return GptCliConfig(**config)
