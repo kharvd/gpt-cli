@@ -78,13 +78,15 @@ class CLIResponseStreamer(ResponseStreamer):
 
 
 class CLIChatListener(ChatListener):
-    def __init__(self, markdown: bool):
+    def __init__(self, markdown: bool, print_welcome: bool):
         self.markdown = markdown
+        self.print_welcome = print_welcome
         self.console = Console()
 
     def on_chat_start(self):
         console = Console(width=80)
-        console.print(Markdown(TERMINAL_WELCOME))
+        if self.print_welcome:
+            console.print(Markdown(TERMINAL_WELCOME))
 
     def on_chat_clear(self):
         self.console.print("[bold]Cleared the conversation.[/bold]")
