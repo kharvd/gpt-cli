@@ -181,6 +181,23 @@ $ gpt pirate
 Ahoy, matey! What be bringing ye to these here waters? Be it treasure or adventure ye seek, we be sailing the high seas together. Ready yer map and compass, for we have a long voyage ahead!
 ```
 
+### Read other context to the assistant with !include
+
+You can read in files to the assistant's context with !include <file_path>.
+
+```yaml
+default_assistant: dev
+markdown: True
+openai_api_key: <openai_api_key>
+assistants:
+  pirate:
+    model: gpt-4
+    temperature: 1.0
+    messages:
+      - { role: system, content: !include "pirate.txt" }
+```
+
+
 ### Customize OpenAI API URL
 
 If you are using other models compatible with the OpenAI Python SDK, you can configure them by modifying the `openai_base_url` setting in the config file or using the `OPENAI_BASE_URL` environment variable .
