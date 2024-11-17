@@ -9,12 +9,6 @@ class Message(TypedDict):
     content: str
 
 
-class ModelOverrides(TypedDict, total=False):
-    model: str
-    temperature: float
-    top_p: float
-
-
 class Pricing(TypedDict):
     prompt: float
     response: float
