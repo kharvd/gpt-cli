@@ -1,5 +1,4 @@
-import re
-from typing import Any, Dict, Optional, Tuple
+from typing import Optional
 
 from openai import BadRequestError, OpenAIError
 from prompt_toolkit import PromptSession
@@ -11,9 +10,16 @@ from rich.live import Live
 from rich.markdown import Markdown
 from rich.text import Text
 
-from gptcli.session import (ALL_COMMANDS, COMMAND_CLEAR, COMMAND_QUIT,
-                            COMMAND_RERUN, ChatListener, InvalidArgumentError,
-                            ResponseStreamer, UserInputProvider)
+from gptcli.session import (
+    ALL_COMMANDS,
+    COMMAND_CLEAR,
+    COMMAND_QUIT,
+    COMMAND_RERUN,
+    ChatListener,
+    InvalidArgumentError,
+    ResponseStreamer,
+    UserInputProvider,
+)
 
 TERMINAL_WELCOME = """
 Hi! I'm here to help. Type `:q` or Ctrl-D to exit, `:c` or Ctrl-C and Enter to clear
@@ -113,43 +119,6 @@ class CLIChatListener(ChatListener):
         return CLIResponseStreamer(self.console, self.markdown)
 
 
-def parse_args(input: str) -> Tuple[str, Dict[str, Any]]:
-    # Extract parts enclosed in specific delimiters (triple backticks, triple quotes, single backticks)
-    extracted_parts = []
-    delimiters = ['```', '"""', '`']
-
-    def replacer(match):
-        for i, delimiter in enumerate(delimiters):
-            part = match.group(i + 1)
-            if part is not None:
-                extracted_parts.append((part, delimiter))
-                break
-        return f"__EXTRACTED_PART_{len(extracted_parts) - 1}__"
-
-    # Construct the regex pattern dynamically from the delimiters list
-    pattern_fragments = [re.escape(d) + '(.*?)' + re.escape(d) for d in delimiters]
-    pattern = re.compile('|'.join(pattern_fragments), re.DOTALL)
-
-    input = pattern.sub(replacer, input)
-
-    # Parse the remaining string for arguments
-    args = {}
-    regex = r'--(\w+)(?:=(\S+)|\s+(\S+))?'
-    matches = re.findall(regex, input)
-
-    if matches:
-        for key, value1, value2 in matches:
-            value = value1 if value1 else value2 if value2 else ''
-            args[key] = value.strip("\"'")
-        input = re.sub(regex, "", input).strip()
-
-    # Add back the extracted parts, with enclosing backticks or quotes
-    for i, (part, delimiter) in enumerate(extracted_parts):
-        input = input.replace(f"__EXTRACTED_PART_{i}__", f"{delimiter}{part.strip()}{delimiter}")
-
-    return input, args
-
-
 class CLIFileHistory(FileHistory):
     def append_string(self, string: str) -> None:
         if string in ALL_COMMANDS:
@@ -163,12 +132,11 @@ class CLIUserInputProvider(UserInputProvider):
             history=CLIFileHistory(history_filename)
         )
 
-    def get_user_input(self) -> Tuple[str, Dict[str, Any]]:
+    def get_user_input(self) -> str:
         while (next_user_input := self._request_input()) == "":
             pass
 
-        user_input, args = self._parse_input(next_user_input)
-        return user_input, args
+        return next_user_input
 
     def prompt(self, multiline=False):
         bindings = KeyBindings()
@@ -219,7 +187,3 @@ class CLIUserInputProvider(UserInputProvider):
             return line
 
         return self.prompt(multiline=True)
-
-    def _parse_input(self, input: str) -> Tuple[str, Dict[str, Any]]:
-        input, args = parse_args(input)
-        return input, args
