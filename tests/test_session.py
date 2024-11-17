@@ -40,7 +40,7 @@ def test_simple_input():
     assistant_message = {"role": "assistant", "content": expected_response}
 
     assistant_mock.complete_chat.assert_called_once_with(
-        [system_message, user_message], override_params={}
+        [system_message, user_message], override_params={}, stream=True,
     )
     listener_mock.on_chat_message.assert_has_calls(
         [mock.call(user_message), mock.call(assistant_message)]
@@ -66,7 +66,7 @@ def test_clear():
 
     assistant_mock.complete_chat.assert_called_once_with(
         [system_message, {"role": "user", "content": "user_message"}],
-        override_params={},
+        override_params={}, stream=True,
     )
     listener_mock.on_chat_message.assert_has_calls(
         [
@@ -93,7 +93,7 @@ def test_clear():
 
     assistant_mock.complete_chat.assert_called_once_with(
         [system_message, {"role": "user", "content": "user_message_1"}],
-        override_params={},
+        override_params={}, stream=True,
     )
     listener_mock.on_chat_message.assert_has_calls(
         [
@@ -128,7 +128,7 @@ def test_rerun():
 
     assistant_mock.complete_chat.assert_called_once_with(
         [system_message, {"role": "user", "content": "user_message"}],
-        override_params={},
+        override_params={}, stream=True,
     )
     listener_mock.on_chat_message.assert_has_calls(
         [
@@ -150,7 +150,7 @@ def test_rerun():
 
     assistant_mock.complete_chat.assert_called_once_with(
         [system_message, {"role": "user", "content": "user_message"}],
-        override_params={},
+        override_params={}, stream=True,
     )
     listener_mock.on_chat_message.assert_has_calls(
         [
@@ -175,7 +175,7 @@ def test_args():
     assistant_message = {"role": "assistant", "content": expected_response}
 
     assistant_mock.complete_chat.assert_called_once_with(
-        [system_message, user_message], override_params={"arg1": "value1"}
+        [system_message, user_message], override_params={"arg1": "value1"}, stream=True,
     )
     listener_mock.on_chat_message.assert_has_calls(
         [mock.call(user_message), mock.call(assistant_message)]
@@ -191,7 +191,7 @@ def test_args():
     assert should_continue
 
     assistant_mock.complete_chat.assert_called_once_with(
-        [system_message, user_message], override_params={"arg1": "value1"}
+        [system_message, user_message], override_params={"arg1": "value1"}, stream=True,
     )
     listener_mock.on_chat_message.assert_has_calls([mock.call(assistant_message)])
 
@@ -250,7 +250,7 @@ def test_openai_error():
     assert should_continue
 
     assistant_mock.complete_chat.assert_called_once_with(
-        [system_message, user_message], override_params={}
+        [system_message, user_message], override_params={}, stream=True,
     )
     listener_mock.on_chat_message.assert_has_calls(
         [

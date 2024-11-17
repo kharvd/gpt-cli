@@ -81,11 +81,13 @@ class ChatSession:
         self,
         assistant: Assistant,
         listener: ChatListener,
+        stream: bool = True,
     ):
         self.assistant = assistant
         self.messages: List[Message] = assistant.init_messages()
         self.user_prompts: List[Tuple[Message, ModelOverrides]] = []
         self.listener = listener
+        self.stream = stream
 
     def _clear(self):
         self.messages = self.assistant.init_messages()
@@ -112,7 +114,7 @@ class ChatSession:
         usage: Optional[UsageEvent] = None
         try:
             completion_iter = self.assistant.complete_chat(
-                self.messages, override_params=overrides
+                self.messages, override_params=overrides, stream=self.stream
             )
 
             with self.listener.response_streamer() as stream:
