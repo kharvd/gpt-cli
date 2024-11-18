@@ -10,12 +10,12 @@ from gptcli.completion import (
     ModelOverrides,
     Message,
 )
-import gptcli
 from gptcli.providers.google import GoogleCompletionProvider
 from gptcli.providers.llama import LLaMACompletionProvider
 from gptcli.providers.openai import OpenAICompletionProvider
 from gptcli.providers.anthropic import AnthropicCompletionProvider
 from gptcli.providers.cohere import CohereCompletionProvider
+from gptcli.providers.azure_openai import AzureOpenAICompletionProvider
 
 
 class AssistantConfig(TypedDict, total=False):
@@ -76,6 +76,8 @@ def get_completion_provider(model: str) -> CompletionProvider:
         or model.startswith("o1")
     ):
         return OpenAICompletionProvider()
+    elif model.startswith("oai-azure:"):
+        return AzureOpenAICompletionProvider()
     elif model.startswith("claude"):
         return AnthropicCompletionProvider()
     elif model.startswith("llama"):
@@ -84,8 +86,6 @@ def get_completion_provider(model: str) -> CompletionProvider:
         return CohereCompletionProvider()
     elif model.startswith("gemini"):
         return GoogleCompletionProvider()
-    elif gptcli.providers.openai.use_azure:
-        return OpenAICompletionProvider()
     else:
         raise ValueError(f"Unknown model: {model}")
 

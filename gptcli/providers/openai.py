@@ -15,16 +15,10 @@ from gptcli.completion import (
     UsageEvent,
 )
 
-use_azure: bool = False
 
 class OpenAICompletionProvider(CompletionProvider):
     def __init__(self):
-        if use_azure:
-            self.client = AzureOpenAI(api_key=openai.api_key, base_url=openai.base_url, api_version=openai.api_version)
-        else:
-            self.client = OpenAI(api_key=openai.api_key, base_url=openai.base_url)
-
-                
+        self.client = OpenAI(api_key=openai.api_key, base_url=openai.base_url)
 
     def complete(
         self, messages: List[Message], args: dict, stream: bool = False
@@ -38,6 +32,9 @@ class OpenAICompletionProvider(CompletionProvider):
         model = args["model"]
         if model.startswith("oai-compat:"):
             model = model[len("oai-compat:") :]
+
+        if model.startswith("oai-azure:"):
+            model = model[len("oai-azure:") :]
 
         try:
             if stream:

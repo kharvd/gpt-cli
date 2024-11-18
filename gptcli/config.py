@@ -21,9 +21,6 @@ class GptCliConfig:
     api_key: Optional[str] = os.environ.get("OPENAI_API_KEY")
     openai_api_key: Optional[str] = os.environ.get("OPENAI_API_KEY")
     openai_base_url: Optional[str] = os.environ.get("OPENAI_BASE_URL")
-    # When using azure open ai, set your assistant's model to your deployment
-    # name
-    openai_use_azure: bool = False
     openai_azure_api_version: str = "2024-10-21"
     anthropic_api_key: Optional[str] = os.environ.get("ANTHROPIC_API_KEY")
     google_api_key: Optional[str] = os.environ.get("GOOGLE_API_KEY")
