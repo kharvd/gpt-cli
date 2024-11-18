@@ -179,8 +179,15 @@ def main():
     if config.openai_base_url:
         openai.base_url = config.openai_base_url
 
+    if config.openai_use_azure:
+        gptcli.providers.openai.use_azure = config.openai_use_azure
+
+    if config.openai_azure_api_version:
+        openai.api_version = config.openai_azure_api_version
+
     if config.api_key:
         openai.api_key = config.api_key
+
     elif config.openai_api_key:
         openai.api_key = config.openai_api_key
 

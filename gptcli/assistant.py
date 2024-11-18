@@ -10,6 +10,7 @@ from gptcli.completion import (
     ModelOverrides,
     Message,
 )
+import gptcli
 from gptcli.providers.google import GoogleCompletionProvider
 from gptcli.providers.llama import LLaMACompletionProvider
 from gptcli.providers.openai import OpenAICompletionProvider
@@ -83,6 +84,8 @@ def get_completion_provider(model: str) -> CompletionProvider:
         return CohereCompletionProvider()
     elif model.startswith("gemini"):
         return GoogleCompletionProvider()
+    elif gptcli.providers.openai.use_azure:
+        return OpenAICompletionProvider()
     else:
         raise ValueError(f"Unknown model: {model}")
 
