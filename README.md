@@ -208,6 +208,8 @@ OPENAI_API_KEY=$TOGETHER_API_KEY OPENAI_BASE_URL=https://api.together.xyz/v1 gpt
 
 The prefix is stripped before sending the request to the API.
 
+Similarly, use the `oai-azure:` model name prefix to use a model deployed via Azure Open AI. For example, `oai-azure:my-deployment-name`.
+
 ## Other chat bots
 
 ### Anthropic Claude

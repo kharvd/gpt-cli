@@ -1,7 +1,7 @@
 import re
 from typing import Iterator, List, Optional, cast
 import openai
-from openai import OpenAI
+from openai import AzureOpenAI, OpenAI
 from openai.types.chat import ChatCompletionMessageParam
 
 from gptcli.completion import (
@@ -32,6 +32,9 @@ class OpenAICompletionProvider(CompletionProvider):
         model = args["model"]
         if model.startswith("oai-compat:"):
             model = model[len("oai-compat:") :]
+
+        if model.startswith("oai-azure:"):
+            model = model[len("oai-azure:") :]
 
         try:
             if stream:

@@ -21,6 +21,7 @@ class GptCliConfig:
     api_key: Optional[str] = os.environ.get("OPENAI_API_KEY")
     openai_api_key: Optional[str] = os.environ.get("OPENAI_API_KEY")
     openai_base_url: Optional[str] = os.environ.get("OPENAI_BASE_URL")
+    openai_azure_api_version: str = "2024-10-21"
     anthropic_api_key: Optional[str] = os.environ.get("ANTHROPIC_API_KEY")
     google_api_key: Optional[str] = os.environ.get("GOOGLE_API_KEY")
     cohere_api_key: Optional[str] = os.environ.get("COHERE_API_KEY")

@@ -14,6 +14,7 @@ from gptcli.providers.llama import LLaMACompletionProvider
 from gptcli.providers.openai import OpenAICompletionProvider
 from gptcli.providers.anthropic import AnthropicCompletionProvider
 from gptcli.providers.cohere import CohereCompletionProvider
+from gptcli.providers.azure_openai import AzureOpenAICompletionProvider
 
 
 class AssistantConfig(TypedDict, total=False):
@@ -74,6 +75,8 @@ def get_completion_provider(model: str) -> CompletionProvider:
         or model.startswith("o1")
     ):
         return OpenAICompletionProvider()
+    elif model.startswith("oai-azure:"):
+        return AzureOpenAICompletionProvider()
     elif model.startswith("claude"):
         return AnthropicCompletionProvider()
     elif model.startswith("llama"):
