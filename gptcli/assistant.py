@@ -10,11 +10,12 @@ from gptcli.completion import (
     ModelOverrides,
     Message,
 )
-from gptcli.providers.google import GoogleCompletionProvider
-from gptcli.providers.llama import LLaMACompletionProvider
+#from gptcli.providers.google import GoogleCompletionProvider
+#from gptcli.providers.llama import LLaMACompletionProvider
 from gptcli.providers.openai import OpenAICompletionProvider
+from gptcli.providers.dolphin import DolphinCompletionProvider
 from gptcli.providers.anthropic import AnthropicCompletionProvider
-from gptcli.providers.cohere import CohereCompletionProvider
+#from gptcli.providers.cohere import CohereCompletionProvider
 
 
 class AssistantConfig(TypedDict, total=False):
@@ -81,6 +82,8 @@ def get_completion_provider(model: str) -> CompletionProvider:
         return LLaMACompletionProvider()
     elif model.startswith("command") or model.startswith("c4ai"):
         return CohereCompletionProvider()
+    elif model.startswith("dol"):
+        return DolphinCompletionProvider()
     elif model.startswith("gemini"):
         return GoogleCompletionProvider()
     else:
@@ -148,22 +151,6 @@ class Assistant:
                 },
                 stream=stream,
             )
-
-
-    def OLDcomplete_chat(
-        self, messages, override_params: ModelOverrides = {}, stream: bool = True
-    ) -> Iterator[CompletionEvent]:
-        model = self._param("model", override_params)
-        completion_provider = get_completion_provider(model)
-        return completion_provider.complete(
-            messages,
-            {
-                "model": model,
-                "temperature": float(self._param("temperature", override_params)),
-                "top_p": float(self._param("top_p", override_params)),
-            },
-            stream,
-        )
 
 
 @dataclass

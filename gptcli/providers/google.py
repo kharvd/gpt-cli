@@ -52,7 +52,7 @@ class GoogleCompletionProvider(CompletionProvider):
             system_instruction = messages[0]["content"]
             messages = messages[1:]
         else:
-            system_instruction = None
+            system_instruction = "-"
 
         chat_history = [map_message(m) for m in messages]
 
