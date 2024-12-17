@@ -1,14 +1,12 @@
 from abc import abstractmethod
-from typing_extensions import TypeGuard
 from gptcli.assistant import Assistant
 from gptcli.completion import (
     Message,
-    ModelOverrides,
     CompletionError,
     BadRequestError,
     UsageEvent,
 )
-from typing import Any, Dict, List, Optional, Tuple
+from typing import List, Optional
 
 
 class ResponseStreamer:
@@ -45,7 +43,6 @@ class ChatListener:
         self,
         messages: List[Message],
         response: Message,
-        overrides: ModelOverrides,
         usage: Optional[UsageEvent] = None,
     ):
         pass
@@ -53,7 +50,7 @@ class ChatListener:
 
 class UserInputProvider:
     @abstractmethod
-    def get_user_input(self) -> Tuple[str, Dict[str, Any]]:
+    def get_user_input(self) -> str:
         pass
 
 
@@ -81,11 +78,13 @@ class ChatSession:
         self,
         assistant: Assistant,
         listener: ChatListener,
+        stream: bool = True,
     ):
         self.assistant = assistant
         self.messages: List[Message] = assistant.init_messages()
-        self.user_prompts: List[Tuple[Message, ModelOverrides]] = []
+        self.user_prompts: List[Message] = []
         self.listener = listener
+        self.stream = stream
 
     def _clear(self):
         self.messages = self.assistant.init_messages()
@@ -101,10 +100,9 @@ class ChatSession:
             self.messages = self.messages[:-1]
 
         self.listener.on_chat_rerun(True)
-        _, args = self.user_prompts[-1]
-        self._respond(args)
+        self._respond()
 
-    def _respond(self, overrides: ModelOverrides) -> bool:
+    def _respond(self) -> bool:
         """
         Respond to the user's input and return whether the assistant's response was saved.
         """
@@ -112,7 +110,7 @@ class ChatSession:
         usage: Optional[UsageEvent] = None
         try:
             completion_iter = self.assistant.complete_chat(
-                self.messages, override_params=overrides
+                self.messages, stream=self.stream
             )
 
             with self.listener.response_streamer() as stream:
@@ -135,28 +133,16 @@ class ChatSession:
 
         next_message: Message = {"role": "assistant", "content": next_response}
         self.listener.on_chat_message(next_message)
-        self.listener.on_chat_response(self.messages, next_message, overrides, usage)
+        self.listener.on_chat_response(self.messages, next_message, usage)
 
         self.messages = self.messages + [next_message]
         return True
 
-    def _validate_args(self, args: Dict[str, Any]) -> TypeGuard[ModelOverrides]:
-        for key in args:
-            supported_overrides = self.assistant.supported_overrides()
-            if key not in supported_overrides:
-                self.listener.on_error(
-                    InvalidArgumentError(
-                        f"Invalid argument: {key}. Allowed arguments: {supported_overrides}"
-                    )
-                )
-                return False
-        return True
-
-    def _add_user_message(self, user_input: str, args: ModelOverrides):
+    def _add_user_message(self, user_input: str):
         user_message: Message = {"role": "user", "content": user_input}
         self.messages = self.messages + [user_message]
         self.listener.on_chat_message(user_message)
-        self.user_prompts.append((user_message, args))
+        self.user_prompts.append(user_message)
 
     def _rollback_user_message(self):
         self.messages = self.messages[:-1]
@@ -166,13 +152,10 @@ class ChatSession:
         with self.listener.response_streamer() as stream:
             stream.on_next_token(COMMANDS_HELP)
 
-    def process_input(self, user_input: str, args: Dict[str, Any]):
+    def process_input(self, user_input: str):
         """
         Process the user's input and return whether the session should continue.
         """
-        if not self._validate_args(args):
-            return True
-
         if user_input in COMMAND_QUIT:
             return False
         elif user_input in COMMAND_CLEAR:
@@ -185,8 +168,8 @@ class ChatSession:
             self._print_help()
             return True
 
-        self._add_user_message(user_input, args)
-        response_saved = self._respond(args)
+        self._add_user_message(user_input)
+        response_saved = self._respond()
         if not response_saved:
             self._rollback_user_message()
 
@@ -194,5 +177,5 @@ class ChatSession:
 
     def loop(self, input_provider: UserInputProvider):
         self.listener.on_chat_start()
-        while self.process_input(*input_provider.get_user_input()):
+        while self.process_input(input_provider.get_user_input()):
             pass

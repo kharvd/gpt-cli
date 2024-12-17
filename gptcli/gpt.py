@@ -34,7 +34,7 @@ from gptcli.config import (
     read_yaml_config,
 )
 from gptcli.providers.llama import init_llama_models
-from gptcli.logging import LoggingChatListener
+from gptcli.logging_utils import LoggingChatListener
 from gptcli.cost import PriceChatListener
 from gptcli.session import ChatSession
 from gptcli.shell import execute, simple_response
@@ -179,6 +179,9 @@ def main():
     if config.openai_base_url:
         openai.base_url = config.openai_base_url
 
+    if config.openai_azure_api_version:
+        openai.api_version = config.openai_azure_api_version
+
     if config.api_key:
         openai.api_key = config.api_key
     elif config.openai_api_key:
@@ -230,7 +233,7 @@ def run_non_interactive(args, assistant):
 
 
 class CLIChatSession(ChatSession):
-    def __init__(self, assistant: Assistant, markdown: bool, show_price: bool):
+    def __init__(self, assistant: Assistant, markdown: bool, show_price: bool, stream: bool):
         listeners = [
             CLIChatListener(markdown),
             LoggingChatListener(),
@@ -240,13 +243,13 @@ class CLIChatSession(ChatSession):
             listeners.append(PriceChatListener(assistant))
 
         listener = CompositeChatListener(listeners)
-        super().__init__(assistant, listener)
+        super().__init__(assistant, listener, stream)
 
 
 def run_interactive(args, assistant):
     logger.info("Starting a new chat session. Assistant config: %s", assistant.config)
     session = CLIChatSession(
-        assistant=assistant, markdown=args.markdown, show_price=args.show_price
+        assistant=assistant, markdown=args.markdown, show_price=args.show_price, stream=not args.no_stream
     )
     history_filename = os.path.expanduser("~/.config/gpt-cli/history")
     os.makedirs(os.path.dirname(history_filename), exist_ok=True)

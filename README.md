@@ -112,13 +112,6 @@ optional arguments:
 Type `:q` or Ctrl-D to exit, `:c` or Ctrl-C to clear the conversation, `:r` or Ctrl-R to re-generate the last response.
 To enter multi-line mode, enter a backslash `\` followed by a new line. Exit the multi-line mode by pressing ESC and then Enter.
 
-You can override the model parameters using `--model`, `--temperature` and `--top_p` arguments at the end of your prompt. For example:
-
-```
-> What is the meaning of life? --model gpt-4 --temperature 2.0
-The meaning of life is subjective and can be different for diverse human beings and unique-phil ethics.org/cultuties-/ it that reson/bdstals89im3_jrf334;mvs-bread99ef=g22me
-```
-
 The `dev` assistant is instructed to be an expert in software development and provide short responses.
 
 ```bash
@@ -181,6 +174,22 @@ $ gpt pirate
 Ahoy, matey! What be bringing ye to these here waters? Be it treasure or adventure ye seek, we be sailing the high seas together. Ready yer map and compass, for we have a long voyage ahead!
 ```
 
+### Read other context to the assistant with !include
+
+You can read in files to the assistant's context with !include <file_path>.
+
+```yaml
+default_assistant: dev
+markdown: True
+openai_api_key: <openai_api_key>
+assistants:
+  pirate:
+    model: gpt-4
+    temperature: 1.0
+    messages:
+      - { role: system, content: !include "pirate.txt" }
+```
+
 ### Customize OpenAI API URL
 
 If you are using other models compatible with the OpenAI Python SDK, you can configure them by modifying the `openai_base_url` setting in the config file or using the `OPENAI_BASE_URL` environment variable .
@@ -191,13 +200,15 @@ Example:
 openai_base_url: https://your-custom-api-url.com/v1
 ```
 
-Use `oai-compat:` prefix for the model name to pass non-GPT model names to the API. For example, to chat with Llama3-70b on [https://together.ai](Together), use the following command:
+Use `oai-compat:` prefix for the model name to pass non-GPT model names to the API. For example, to chat with Llama3-70b on [Together](https://together.ai), use the following command:
 
 ```bash
 OPENAI_API_KEY=$TOGETHER_API_KEY OPENAI_BASE_URL=https://api.together.xyz/v1 gpt general --model oai-compat:meta-llama/Llama-3-70b-chat-hf
 ```
 
 The prefix is stripped before sending the request to the API.
+
+Similarly, use the `oai-azure:` model name prefix to use a model deployed via Azure Open AI. For example, `oai-azure:my-deployment-name`.
 
 ## Other chat bots
 

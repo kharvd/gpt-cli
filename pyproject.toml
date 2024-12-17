@@ -1,6 +1,6 @@
 [project]
 name = "gpt-command-line"
-version = "0.2.1"
+version = "0.3.0"
 description = "Command-line interface for ChatGPT and Claude"
 authors = [{name = "Val Kharitonov", email = "val@kharvd.com"}]
 readme = "README.md"
@@ -17,17 +17,17 @@ classifiers = [
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
 ]
 dependencies = [
-    "anthropic==0.34.1",
-    "attrs==24.2.0",
-    "black==24.4.2",
-    "cohere==5.8.1",
+    "anthropic~=0.39.0",
+    "attrs~=24.2.0",
+    "black~=24.10.0",
+    "cohere~=5.11.4",
     "google-generativeai==0.7.2",
-    "openai==1.42.0",
-    "prompt-toolkit==3.0.47",
-    "pytest==8.3.2",
-    "PyYAML==6.0.2",
-    "rich==13.7.1",
-    "typing_extensions==4.12.2",
+    "openai~=1.54.4",
+    "prompt-toolkit~=3.0.48",
+    "pytest~=8.3.3",
+    "PyYAML~=6.0.2",
+    "rich~=13.9.4",
+    "typing_extensions~=4.12.2",
     "pydantic<2",
 ]
 

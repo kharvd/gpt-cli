@@ -1,6 +1,6 @@
 from typing import Iterator, List, cast
 import openai
-from openai import OpenAI
+from openai import AzureOpenAI, OpenAI
 from openai.types.chat import ChatCompletionMessageParam
 
 import tiktoken
@@ -94,6 +94,7 @@ class OpenAICompletionProvider(CompletionProvider):
             )
 
             for response in response_iter:
+
                 next_choice = response.choices[0]
                 if next_choice.finish_reason is None and next_choice.delta.content:
                     yield next_choice.delta.content
