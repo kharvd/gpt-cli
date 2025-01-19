@@ -1,10 +1,13 @@
 import os
-from openai import OpenAI
 from typing import Optional
-from gptcli.providers.openai import OpenAICompletionProvider
+
+from openai import OpenAI
+
 from gptcli.completion import Pricing
+from gptcli.providers.openai import OpenAICompletionProvider
 
 api_key = os.environ.get("XAI_API_KEY")
+
 
 class XAICompletionProvider(OpenAICompletionProvider):
     def __init__(self):
@@ -18,13 +21,13 @@ class XAICompletionProvider(OpenAICompletionProvider):
         else:
             return None
 
+
 GROK_2_PRICE_PER_TOKEN: Pricing = {
     "prompt": 2.00 / 1_000_000,
-    "response": 10.00 / 1_000_000
+    "response": 10.00 / 1_000_000,
 }
 
 GROK_BETA_PRICE_PER_TOKEN: Pricing = {
     "prompt": 5.00 / 1_000_000,
-    "response": 15.00 / 1_000_000
+    "response": 15.00 / 1_000_000,
 }
-
