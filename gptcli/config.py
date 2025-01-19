@@ -25,7 +25,7 @@ class GptCliConfig:
     anthropic_api_key: Optional[str] = os.environ.get("ANTHROPIC_API_KEY")
     google_api_key: Optional[str] = os.environ.get("GOOGLE_API_KEY")
     cohere_api_key: Optional[str] = os.environ.get("COHERE_API_KEY")
-    grok_api_key: Optional[str] = os.environ.get("XAI_API_KEY")
+    xai_api_key: Optional[str] = os.environ.get("XAI_API_KEY")
     log_file: Optional[str] = None
     log_level: str = "INFO"
     assistants: Dict[str, AssistantConfig] = {}

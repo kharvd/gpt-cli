@@ -16,7 +16,7 @@ from gptcli.completion import (
 )
 
 
-class GrokCompletionProvider(CompletionProvider):
+class XAICompletionProvider(CompletionProvider):
     def __init__(self):
         self.api_key = os.environ.get("XAI_API_KEY") or openai.api_key
         if not self.api_key:
