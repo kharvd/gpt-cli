@@ -20,6 +20,8 @@ from gptcli.providers.azure_openai import AzureOpenAICompletionProvider
 class AssistantConfig(TypedDict, total=False):
     messages: List[Message]
     model: str
+    openai_base_url_override: Optional[str]
+    openai_api_key_override: Optional[str]
     temperature: float
     top_p: float
 
@@ -66,7 +68,11 @@ User's `uname`: {platform.uname()}. User's `$SHELL`: {os.environ.get('SHELL')}."
 }
 
 
-def get_completion_provider(model: str) -> CompletionProvider:
+def get_completion_provider(
+    model: str,
+    openai_base_url_override: Optional[str] = None,
+    openai_api_key_override: Optional[str] = None,
+) -> CompletionProvider:
     if (
         model.startswith("gpt")
         or model.startswith("ft:gpt")
@@ -74,7 +80,9 @@ def get_completion_provider(model: str) -> CompletionProvider:
         or model.startswith("chatgpt")
         or model.startswith("o1")
     ):
-        return OpenAICompletionProvider()
+        return OpenAICompletionProvider(
+            openai_base_url_override, openai_api_key_override
+        )
     elif model.startswith("oai-azure:"):
         return AzureOpenAICompletionProvider()
     elif model.startswith("claude"):
@@ -112,11 +120,15 @@ class Assistant:
     def _param(self, param: str) -> Any:
         # Use the value from the config if exists
         # Otherwise, use the default value
-        return self.config.get(param, CONFIG_DEFAULTS[param])
+        return self.config.get(param, CONFIG_DEFAULTS.get(param, None))
 
     def complete_chat(self, messages, stream: bool = True) -> Iterator[CompletionEvent]:
         model = self._param("model")
-        completion_provider = get_completion_provider(model)
+        completion_provider = get_completion_provider(
+            model,
+            self._param("openai_base_url_override"),
+            self._param("openai_api_key_override"),
+        )
         return completion_provider.complete(
             messages,
             {
