@@ -210,6 +210,17 @@ The prefix is stripped before sending the request to the API.
 
 Similarly, use the `oai-azure:` model name prefix to use a model deployed via Azure Open AI. For example, `oai-azure:my-deployment-name`.
 
+With assistant configuration, you can override the base URL and API key for a specific assistant.
+
+```yaml
+# ~/.config/gpt-cli/gpt.yml
+assistants:
+  llama:
+    model: oai-compat:meta-llama/llama-3.3-70b-instruct
+    openai_base_url_override: https://openrouter.ai/api/v1
+    openai_api_key_override: $OPENROUTER_API_KEY
+```
+
 ## Other chat bots
 
 ### Anthropic Claude

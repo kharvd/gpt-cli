@@ -1,7 +1,7 @@
 import re
 from typing import Iterator, List, Optional, cast
 import openai
-from openai import AzureOpenAI, OpenAI
+from openai import OpenAI
 from openai.types.chat import ChatCompletionMessageParam
 
 from gptcli.completion import (
@@ -17,8 +17,10 @@ from gptcli.completion import (
 
 
 class OpenAICompletionProvider(CompletionProvider):
-    def __init__(self):
-        self.client = OpenAI(api_key=openai.api_key, base_url=openai.base_url)
+    def __init__(self, base_url: Optional[str] = None, api_key: Optional[str] = None):
+        self.client = OpenAI(
+            api_key=api_key or openai.api_key, base_url=base_url or openai.base_url
+        )
 
     def complete(
         self, messages: List[Message], args: dict, stream: bool = False
@@ -136,6 +138,7 @@ O_1_MINI_PRICE_PER_TOKEN: Pricing = {
     "prompt": 3.0 / 1_000_000,
     "response": 12.0 / 1_000_000,
 }
+
 
 def gpt_pricing(model: str) -> Optional[Pricing]:
     if model.startswith("gpt-3.5-turbo-16k"):
