@@ -56,7 +56,7 @@ class OpenAICompletionProvider(CompletionProvider):
                     ):
                         yield MessageDeltaEvent(response.choices[0].delta.content)
 
-                    if response.usage and (pricing := gpt_pricing(args["model"])):
+                    if response.usage and (pricing := self.pricing(args["model"])):
                         yield UsageEvent.with_pricing(
                             prompt_tokens=response.usage.prompt_tokens,
                             completion_tokens=response.usage.completion_tokens,
@@ -73,7 +73,7 @@ class OpenAICompletionProvider(CompletionProvider):
                 next_choice = response.choices[0]
                 if next_choice.message.content:
                     yield MessageDeltaEvent(next_choice.message.content)
-                if response.usage and (pricing := gpt_pricing(args["model"])):
+                if response.usage and (pricing := self.pricing(args["model"])):
                     yield UsageEvent.with_pricing(
                         prompt_tokens=response.usage.prompt_tokens,
                         completion_tokens=response.usage.completion_tokens,
@@ -86,6 +86,8 @@ class OpenAICompletionProvider(CompletionProvider):
         except openai.APIError as e:
             raise CompletionError(e.message) from e
 
+    def pricing(self, model: str) -> Optional[Pricing]:
+        return gpt_pricing(model)
 
 GPT_3_5_TURBO_PRICE_PER_TOKEN: Pricing = {
     "prompt": 0.50 / 1_000_000,

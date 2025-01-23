@@ -193,6 +193,9 @@ def main():
     if config.cohere_api_key:
         gptcli.providers.cohere.api_key = config.cohere_api_key
 
+    if config.xai_api_key:
+        gptcli.providers.xai.api_key = config.xai_api_key
+
     if config.google_api_key:
         genai.configure(api_key=config.google_api_key)
 

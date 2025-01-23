@@ -15,6 +15,7 @@ from gptcli.providers.openai import OpenAICompletionProvider
 from gptcli.providers.anthropic import AnthropicCompletionProvider
 from gptcli.providers.cohere import CohereCompletionProvider
 from gptcli.providers.azure_openai import AzureOpenAICompletionProvider
+from gptcli.providers.xai import XAICompletionProvider
 
 
 class AssistantConfig(TypedDict, total=False):
@@ -93,6 +94,8 @@ def get_completion_provider(
         return CohereCompletionProvider()
     elif model.startswith("gemini"):
         return GoogleCompletionProvider()
+    elif model.startswith("grok"):
+        return XAICompletionProvider()
     else:
         raise ValueError(f"Unknown model: {model}")
 
