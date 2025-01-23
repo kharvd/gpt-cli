@@ -1,6 +1,6 @@
 [project]
 name = "gpt-command-line"
-version = "0.3.1"
+version = "0.3.2"
 description = "Command-line interface for ChatGPT and Claude"
 authors = [{name = "Val Kharitonov", email = "val@kharvd.com"}]
 readme = "README.md"
@@ -21,7 +21,7 @@ dependencies = [
     "attrs~=24.2.0",
     "black~=24.10.0",
     "cohere~=5.13.11",
-    "google-generativeai==0.7.2",
+    "google-generativeai~=0.8.4",
     "openai~=1.60.0",
     "prompt-toolkit~=3.0.48",
     "pytest~=8.3.3",
