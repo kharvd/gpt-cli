@@ -4,14 +4,27 @@ from typing import Dict, List, Optional
 import yaml
 from attr import dataclass
 
-from gptcli.assistant import AssistantConfig
 from gptcli.providers.llama import LLaMAModelConfig
+from gptcli.completion import Message
 
 CONFIG_FILE_PATHS = [
     os.path.join(os.path.expanduser("~"), ".config", "gpt-cli", "gpt.yml"),
     os.path.join(os.path.expanduser("~"), ".gptrc"),
 ]
 
+class AssistantConfig:
+    messages: List[Message]
+    model: str
+    openai_base_url_override: Optional[str]
+    openai_api_key_override: Optional[str]
+    temperature: float
+    top_p: float
+
+@dataclass
+class ModelConfig:
+    api_key: Optional[str] = None
+    base_url: Optional[str] = None
+    pricing: Optional[Dict[str, float]] = None
 
 @dataclass
 class GptCliConfig:
@@ -30,7 +43,7 @@ class GptCliConfig:
     assistants: Dict[str, AssistantConfig] = {}
     interactive: Optional[bool] = None
     llama_models: Optional[Dict[str, LLaMAModelConfig]] = None
-
+    model_configs: Optional[Dict[str, ModelConfig]] = None
 
 def choose_config_file(paths: List[str]) -> str:
     for path in paths:

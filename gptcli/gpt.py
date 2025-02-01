@@ -199,7 +199,7 @@ def main():
     if config.llama_models is not None:
         init_llama_models(config.llama_models)
 
-    assistant = init_assistant(cast(AssistantGlobalArgs, args), config.assistants)
+    assistant = init_assistant(cast(AssistantGlobalArgs, args), config.assistants, model_configs=config.model_configs)
 
     if args.prompt is not None:
         run_non_interactive(args, assistant)
