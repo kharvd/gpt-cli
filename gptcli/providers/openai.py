@@ -56,7 +56,8 @@ class OpenAICompletionProvider(CompletionProvider):
                     ):
                         yield MessageDeltaEvent(response.choices[0].delta.content)
 
-                    if response.usage and (pricing := gpt_pricing(args["model"])):
+                    pricing = args.get("pricing") or gpt_pricing(args["model"])
+                    if response.usage and pricing:
                         yield UsageEvent.with_pricing(
                             prompt_tokens=response.usage.prompt_tokens,
                             completion_tokens=response.usage.completion_tokens,
@@ -73,13 +74,14 @@ class OpenAICompletionProvider(CompletionProvider):
                 next_choice = response.choices[0]
                 if next_choice.message.content:
                     yield MessageDeltaEvent(next_choice.message.content)
-                if response.usage and (pricing := gpt_pricing(args["model"])):
-                    yield UsageEvent.with_pricing(
-                        prompt_tokens=response.usage.prompt_tokens,
-                        completion_tokens=response.usage.completion_tokens,
-                        total_tokens=response.usage.total_tokens,
-                        pricing=pricing,
-                    )
+                    pricing = args.get("pricing") or gpt_pricing(args["model"])
+                    if response.usage and pricing:
+                        yield UsageEvent.with_pricing(
+                            prompt_tokens=response.usage.prompt_tokens,
+                            completion_tokens=response.usage.completion_tokens,
+                            total_tokens=response.usage.total_tokens,
+                            pricing=pricing,
+                        )
 
         except openai.BadRequestError as e:
             raise BadRequestError(e.message) from e

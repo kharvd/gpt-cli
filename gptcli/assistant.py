@@ -15,15 +15,7 @@ from gptcli.providers.openai import OpenAICompletionProvider
 from gptcli.providers.anthropic import AnthropicCompletionProvider
 from gptcli.providers.cohere import CohereCompletionProvider
 from gptcli.providers.azure_openai import AzureOpenAICompletionProvider
-
-
-class AssistantConfig(TypedDict, total=False):
-    messages: List[Message]
-    model: str
-    openai_base_url_override: Optional[str]
-    openai_api_key_override: Optional[str]
-    temperature: float
-    top_p: float
+from gptcli.config import ModelConfig, AssistantConfig
 
 
 CONFIG_DEFAULTS = {
@@ -73,17 +65,7 @@ def get_completion_provider(
     openai_base_url_override: Optional[str] = None,
     openai_api_key_override: Optional[str] = None,
 ) -> CompletionProvider:
-    if (
-        model.startswith("gpt")
-        or model.startswith("ft:gpt")
-        or model.startswith("oai-compat:")
-        or model.startswith("chatgpt")
-        or model.startswith("o1")
-    ):
-        return OpenAICompletionProvider(
-            openai_base_url_override, openai_api_key_override
-        )
-    elif model.startswith("oai-azure:"):
+    if model.startswith("oai-azure:"):
         return AzureOpenAICompletionProvider()
     elif model.startswith("claude"):
         return AnthropicCompletionProvider()
@@ -94,15 +76,18 @@ def get_completion_provider(
     elif model.startswith("gemini"):
         return GoogleCompletionProvider()
     else:
-        raise ValueError(f"Unknown model: {model}")
+        return OpenAICompletionProvider(
+            openai_base_url_override, openai_api_key_override
+        )
 
 
 class Assistant:
-    def __init__(self, config: AssistantConfig):
+    def __init__(self, config: AssistantConfig, model_configs: Optional[Dict[str, ModelConfig]] = None):
         self.config = config
+        self.model_configs = model_configs or {}
 
     @classmethod
-    def from_config(cls, name: str, config: AssistantConfig):
+    def from_config(cls, name: str, config: AssistantConfig, model_configs: Optional[Dict[str, ModelConfig]] = None):
         config = config.copy()
         if name in DEFAULT_ASSISTANTS:
             # Merge the config with the default config
@@ -112,7 +97,7 @@ class Assistant:
                 if config.get(key) is None:
                     config[key] = default_config[key]
 
-        return cls(config)
+        return cls(config, model_configs=model_configs)
 
     def init_messages(self) -> List[Message]:
         return self.config.get("messages", [])[:]
@@ -124,10 +109,22 @@ class Assistant:
 
     def complete_chat(self, messages, stream: bool = True) -> Iterator[CompletionEvent]:
         model = self._param("model")
+        # Check if there is a model configuration override for this model.
+        if model in self.model_configs:
+            model_conf = self.model_configs[model]
+            print(model_conf)
+            openai_api_key_override = model_conf['api_key'] or self.config.get("openai_api_key_override")
+            openai_base_url_override = model_conf['base_url'] or self.config.get("openai_base_url_override")
+            pricing_override = model_conf['pricing']
+        else:
+            openai_api_key_override = self._param("openai_api_key_override")
+            openai_base_url_override = self._param("openai_base_url_override")
+            pricing_override = None
+
         completion_provider = get_completion_provider(
             model,
-            self._param("openai_base_url_override"),
-            self._param("openai_api_key_override"),
+            openai_base_url_override,
+            openai_api_key_override,
         )
         return completion_provider.complete(
             messages,
@@ -135,6 +132,8 @@ class Assistant:
                 "model": model,
                 "temperature": float(self._param("temperature")),
                 "top_p": float(self._param("top_p")),
+                # Pass along the pricing override if available.
+                "pricing": pricing_override,
             },
             stream,
         )
@@ -149,13 +148,15 @@ class AssistantGlobalArgs:
 
 
 def init_assistant(
-    args: AssistantGlobalArgs, custom_assistants: Dict[str, AssistantConfig]
+    args: AssistantGlobalArgs,
+    custom_assistants: Dict[str, AssistantConfig],
+    model_configs: Optional[Dict[str, ModelConfig]] = None,
 ) -> Assistant:
     name = args.assistant_name
     if name in custom_assistants:
-        assistant = Assistant.from_config(name, custom_assistants[name])
+        assistant = Assistant.from_config(name, custom_assistants[name], model_configs=model_configs)
     elif name in DEFAULT_ASSISTANTS:
-        assistant = Assistant.from_config(name, DEFAULT_ASSISTANTS[name])
+        assistant = Assistant.from_config(name, DEFAULT_ASSISTANTS[name], model_configs=model_configs)
     else:
         print(f"Unknown assistant: {name}")
         sys.exit(1)
