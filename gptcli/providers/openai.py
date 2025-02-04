@@ -1,6 +1,3 @@
-#!/usr/bin/env python3
-# gptcli/providers/openai.py
-
 import re
 from typing import Iterator, List, Optional, cast
 import openai
@@ -37,6 +34,7 @@ class OpenAICompletionProvider(CompletionProvider):
         model = args["model"]
         if model.startswith("oai-compat:"):
             model = model[len("oai-compat:") :]
+
         if model.startswith("oai-azure:"):
             model = model[len("oai-azure:") :]
 
@@ -89,7 +87,6 @@ class OpenAICompletionProvider(CompletionProvider):
             raise CompletionError(e.message) from e
 
 
-# Pricing definitions per token (in USD)
 GPT_3_5_TURBO_0125_PRICE_PER_TOKEN: Pricing = {
     "prompt": 0.50 / 1_000_000,
     "response": 1.50 / 1_000_000,
@@ -247,7 +244,6 @@ BABBAGE_002_PRICE_PER_TOKEN: Pricing = {
     "response": 0.40 / 1_000_000,
 }
 
-# Dictionary mapping model names to their pricing definitions.
 PRICING_MAP: dict[str, Pricing] = {
     "davinci-002": DAVINCI_002_PRICE_PER_TOKEN,
     "babbage-002": BABBAGE_002_PRICE_PER_TOKEN,
@@ -277,10 +273,8 @@ PRICING_MAP: dict[str, Pricing] = {
     "gpt-4o-mini-audio-preview-2024-12-17": GPT_4_O_MINI_AUDIO_PREVIEW_2024_12_17_PRICE_PER_TOKEN,
     "o1": O_1_PRICE_PER_TOKEN,
     "o1-2024-12-17": O_1_2024_12_17_PRICE_PER_TOKEN,
-    # The o1-preview branch was updated to be more specific.
     "o1-preview-2024-09-12": O_1_PREVIEW_2024_09_12_PRICE_PER_TOKEN,
     "o3-mini": O_3_MINI_PRICE_PER_TOKEN,
-    # Fixed the model name key from "03-mini-2025-01-31" to "o3-mini-2025-01-31"
     "o3-mini-2025-01-31": O_3_MINI_2025_01_31_PRICE_PER_TOKEN,
     "chatgpt-4o-latest": CHATGPT_4O_LATEST_PRICE_PER_TOKEN,
 }
