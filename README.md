@@ -38,12 +38,18 @@ Install latest version from source:
 pip install git+https://github.com/kharvd/gpt-cli.git
 ```
 
-Or install by cloning the repository manually:
+Install by cloning the repository manually:
 
 ```bash
 git clone https://github.com/kharvd/gpt-cli.git
 cd gpt-cli
 pip install .
+```
+
+Or use with `nix`:
+
+```bash
+nix run github:kharvd/gpt-cli
 ```
 
 Add the OpenAI API key to your `.bashrc` file (in the root of your home folder).
