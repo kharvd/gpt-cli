@@ -24,6 +24,7 @@ class AssistantConfig(TypedDict, total=False):
     openai_api_key_override: Optional[str]
     temperature: float
     top_p: float
+    thinking_budget: Optional[int]
 
 
 CONFIG_DEFAULTS = {
@@ -129,13 +130,21 @@ class Assistant:
             self._param("openai_base_url_override"),
             self._param("openai_api_key_override"),
         )
+
+        args = {
+            "model": model,
+            "temperature": float(self._param("temperature")),
+            "top_p": float(self._param("top_p")),
+        }
+
+        # Add thinking budget if it's specified and we're using Claude 3.7
+        thinking_budget = self.config.get("thinking_budget")
+        if thinking_budget is not None and "claude-3-7" in model:
+            args["thinking_budget"] = thinking_budget
+
         return completion_provider.complete(
             messages,
-            {
-                "model": model,
-                "temperature": float(self._param("temperature")),
-                "top_p": float(self._param("top_p")),
-            },
+            args,
             stream,
         )
 
@@ -146,6 +155,7 @@ class AssistantGlobalArgs:
     model: Optional[str] = None
     temperature: Optional[float] = None
     top_p: Optional[float] = None
+    thinking_budget: Optional[int] = None
 
 
 def init_assistant(
@@ -167,4 +177,6 @@ def init_assistant(
         assistant.config["model"] = args.model
     if args.top_p is not None:
         assistant.config["top_p"] = args.top_p
+    if args.thinking_budget is not None:
+        assistant.config["thinking_budget"] = args.thinking_budget
     return assistant

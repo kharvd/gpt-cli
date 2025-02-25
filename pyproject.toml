@@ -5,7 +5,7 @@ description = "Command-line interface for ChatGPT and Claude"
 authors = [{name = "Val Kharitonov", email = "val@kharvd.com"}]
 readme = "README.md"
 license = {file = "LICENSE"}
-requires-python = ">=3.9"
+requires-python = ">=3.9,<3.13"
 keywords = ["cli", "command-line", "assistant", "openai", "claude", "cohere", "gpt-3", "gpt-4", "llm", "chatgpt", "gpt-cli", "anthropic", "gpt-client", "anthropic-claude"]
 classifiers = [
     "Development Status :: 4 - Beta",
@@ -17,14 +17,14 @@ classifiers = [
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
 ]
 dependencies = [
-    "anthropic~=0.44.0",
-    "attrs~=24.2.0",
-    "black~=24.10.0",
-    "cohere~=5.13.11",
+    "anthropic~=0.47.1",
+    "attrs~=25.1.0",
+    "black~=25.1.0",
+    "cohere~=5.13.12",
     "google-generativeai~=0.8.4",
-    "openai~=1.60.0",
-    "prompt-toolkit~=3.0.48",
-    "pytest~=8.3.3",
+    "openai~=1.64.0",
+    "prompt-toolkit~=3.0.50",
+    "pytest~=8.3.4",
     "PyYAML~=6.0.2",
     "rich~=13.9.4",
     "typing_extensions~=4.12.2",

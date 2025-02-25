@@ -16,6 +16,9 @@ class ResponseStreamer:
     def on_next_token(self, token: str):
         pass
 
+    def on_thinking_token(self, token: str):
+        pass
+
     def __exit__(self, *args):
         pass
 
@@ -118,6 +121,8 @@ class ChatSession:
                     if event.type == "message_delta":
                         next_response += event.text
                         stream.on_next_token(event.text)
+                    elif event.type == "thinking_delta":
+                        stream.on_thinking_token(event.text)
                     elif event.type == "usage":
                         usage = event
 

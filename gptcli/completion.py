@@ -21,6 +21,12 @@ class MessageDeltaEvent:
 
 
 @dataclass
+class ThinkingDeltaEvent:
+    text: str
+    type: Literal["thinking_delta"] = "thinking_delta"
+
+
+@dataclass
 class UsageEvent:
     prompt_tokens: int
     completion_tokens: int
@@ -41,7 +47,7 @@ class UsageEvent:
         )
 
 
-CompletionEvent = Union[MessageDeltaEvent, UsageEvent]
+CompletionEvent = Union[MessageDeltaEvent, ThinkingDeltaEvent, UsageEvent]
 
 
 class CompletionProvider:

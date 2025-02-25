@@ -16,6 +16,7 @@ Command-line interface for chat LLMs.
 
 - **Command-Line Interface**: Interact with ChatGPT or Claude directly from your terminal.
 - **Model Customization**: Override the default model, temperature, and top_p values for each assistant, giving you fine-grained control over the AI's behavior.
+- **Extended Thinking Mode**: Enable Claude 3.7's extended thinking capability to see its reasoning process for complex problems.
 - **Usage tracking**: Track your API usage with token count and price information.
 - **Keyboard Shortcuts**: Use Ctrl-C, Ctrl-D, and Ctrl-R shortcuts for easier conversation management and input control.
 - **Multi-Line Input**: Enter multi-line mode for more complex queries or conversations.
@@ -68,9 +69,9 @@ Make sure to set the `OPENAI_API_KEY` environment variable to your OpenAI API ke
 
 ```
 usage: gpt [-h] [--no_markdown] [--model MODEL] [--temperature TEMPERATURE] [--top_p TOP_P]
-              [--log_file LOG_FILE] [--log_level {DEBUG,INFO,WARNING,ERROR,CRITICAL}]
-              [--prompt PROMPT] [--execute EXECUTE] [--no_stream]
-              [{dev,general,bash}]
+              [--thinking THINKING_BUDGET] [--log_file LOG_FILE] 
+              [--log_level {DEBUG,INFO,WARNING,ERROR,CRITICAL}] [--prompt PROMPT] 
+              [--execute EXECUTE] [--no_stream] [{dev,general,bash}]
 
 Run a chat session with ChatGPT. See https://github.com/kharvd/gpt-cli for more information.
 
@@ -91,6 +92,9 @@ optional arguments:
                         temperature defined for the assistant.
   --top_p TOP_P         The top_p to use for the chat session. Overrides the default top_p defined
                         for the assistant.
+  --thinking THINKING_BUDGET
+                        Enable Claude's extended thinking mode with the specified token budget.
+                        Only applies to Claude 3.7 models.
   --log_file LOG_FILE   The file to write logs to. Supports strftime format codes.
   --log_level {DEBUG,INFO,WARNING,ERROR,CRITICAL}
                         The log level to use
@@ -142,6 +146,7 @@ assistants:
     model: <model_name>
     temperature: <temperature>
     top_p: <top_p>
+    thinking_budget: <token_budget>  # Claude 3.7 models only
     messages:
       - { role: <role>, content: <message> }
       - ...
@@ -242,6 +247,29 @@ Now you should be able to run `gpt` with `--model claude-3-(opus|sonnet|haiku)-<
 ```bash
 gpt --model claude-3-opus-20240229
 ```
+
+#### Claude 3.7 Sonnet Extended Thinking Mode
+
+Claude 3.7 Sonnet supports an extended thinking mode, which shows Claude's reasoning process before delivering the final answer. This is useful for complex analysis, advanced STEM problems, and tasks with multiple constraints.
+
+Enable it with the `--thinking` parameter, specifying the token budget for the thinking process:
+
+```bash
+gpt --model claude-3-7-sonnet-20250219 --thinking 32000
+```
+
+You can also configure thinking mode for specific assistants in your config:
+
+```yaml
+assistants:
+  math:
+    model: claude-3-7-sonnet-20250219
+    thinking_budget: 32000
+    messages:
+      - { role: system, content: "You are a math expert." }
+```
+
+**Note**: When thinking mode is enabled, the temperature is automatically set to 1.0 and top_p is unset as required by the Claude API.
 
 ### Google Gemini
 

@@ -95,6 +95,13 @@ for the assistant.",
         help="The top_p to use for the chat session. Overrides the default top_p defined for the assistant.",
     )
     parser.add_argument(
+        "--thinking",
+        type=int,
+        dest="thinking_budget",
+        default=None,
+        help="Enable Claude's extended thinking mode with the specified token budget. Only applies to Claude 3.7 models.",
+    )
+    parser.add_argument(
         "--log_file",
         type=str,
         default=config.log_file,

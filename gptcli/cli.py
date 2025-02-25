@@ -1,4 +1,5 @@
 from typing import Optional
+from venv import logger
 
 from openai import BadRequestError, OpenAIError
 from prompt_toolkit import PromptSession
@@ -31,10 +32,11 @@ Try `:?` for help.
 
 
 class StreamingMarkdownPrinter:
-    def __init__(self, console: Console, markdown: bool):
+    def __init__(self, console: Console, markdown: bool, style: str = "green"):
         self.console = console
         self.current_text = ""
         self.markdown = markdown
+        self.style = style
         self.live: Optional[Live] = None
 
     def __enter__(self) -> "StreamingMarkdownPrinter":
@@ -49,11 +51,11 @@ class StreamingMarkdownPrinter:
         self.current_text += text
         if self.markdown:
             assert self.live
-            content = Markdown(self.current_text, style="green")
+            content = Markdown(self.current_text, style=self.style)
             self.live.update(content)
             self.live.refresh()
         else:
-            self.console.print(Text(text, style="green"), end="")
+            self.console.print(Text(text, style=self.style), end="")
 
     def __exit__(self, *args):
         if self.markdown:
@@ -67,6 +69,7 @@ class CLIResponseStreamer(ResponseStreamer):
         self.console = console
         self.markdown = markdown
         self.printer = StreamingMarkdownPrinter(self.console, self.markdown)
+        self.thinking_printer = None
         self.first_token = True
 
     def __enter__(self):
@@ -77,9 +80,24 @@ class CLIResponseStreamer(ResponseStreamer):
         if self.first_token and token.startswith(" "):
             token = token[1:]
         self.first_token = False
+        if self.thinking_printer is not None:
+            self.printer.print("\n")
+            self.thinking_printer.__exit__()
+            self.thinking_printer = None
         self.printer.print(token)
 
+    def on_thinking_token(self, token: str):
+        if self.thinking_printer is None:
+            self.console.print("\n[bold blue]Thinking...[/bold blue]", end="\n\n")
+            self.thinking_printer = StreamingMarkdownPrinter(
+                self.console, self.markdown, style="dim blue"
+            )
+            self.thinking_printer.__enter__()
+        self.thinking_printer.print(token)
+
     def __exit__(self, *args):
+        if self.thinking_printer:
+            self.thinking_printer.__exit__(*args)
         self.printer.__exit__(*args)
 
 

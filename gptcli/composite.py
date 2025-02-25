@@ -18,6 +18,10 @@ class CompositeResponseStreamer(ResponseStreamer):
         for streamer in self.streamers:
             streamer.on_next_token(token)
 
+    def on_thinking_token(self, token: str):
+        for streamer in self.streamers:
+            streamer.on_thinking_token(token)
+
     def __exit__(self, *args):
         for streamer in self.streamers:
             streamer.__exit__(*args)
