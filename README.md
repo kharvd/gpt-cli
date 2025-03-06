@@ -2,6 +2,12 @@
 
 Command-line interface for chat LLMs.
 
+## Try now
+```
+export ANTHROPIC_API_KEY=xcxc
+uvx --from gpt-command-line gpt
+```
+
 ## Supported providers
 
 - OpenAI
