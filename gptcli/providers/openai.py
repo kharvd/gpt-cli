@@ -127,6 +127,11 @@ GPT_4_O_MINI_PRICE_PER_TOKEN: Pricing = {
     "response": 0.600 / 1_000_000,
 }
 
+GPT_4_5_PRICE_PER_TOKEN: Pricing = {
+    "prompt": 75.0 / 1_000_000,
+    "response": 150.0 / 1_000_000,
+}
+
 O_1_PREVIEW_PRICE_PER_TOKEN: Pricing = {
     "prompt": 15.0 / 1_000_000,
     "response": 60.0 / 1_000_000,
@@ -151,6 +156,8 @@ def gpt_pricing(model: str) -> Optional[Pricing]:
         return GPT_4_O_2024_05_13_PRICE_PER_TOKEN
     elif model.startswith("gpt-4o"):
         return GPT_4_O_2024_08_06_PRICE_PER_TOKEN
+    elif model.startswith("gpt-4.5"):
+        return GPT_4_5_PRICE_PER_TOKEN
     elif model.startswith("gpt-4-turbo") or re.match(r"gpt-4-\d\d\d\d-preview", model):
         return GPT_4_TURBO_PRICE_PER_TOKEN
     elif model.startswith("gpt-4"):
