@@ -9,13 +9,13 @@ if sys.version_info < MIN_PYTHON:
 import os
 from typing import cast
 import openai
-import google.generativeai as genai
 import argparse
 import sys
 import logging
 import datetime
 import gptcli.providers.anthropic
 import gptcli.providers.cohere
+import gptcli.providers.google as google
 from gptcli.assistant import (
     Assistant,
     DEFAULT_ASSISTANTS,
@@ -201,7 +201,7 @@ def main():
         gptcli.providers.cohere.api_key = config.cohere_api_key
 
     if config.google_api_key:
-        genai.configure(api_key=config.google_api_key)
+        google.api_key = config.google_api_key
 
     if config.llama_models is not None:
         init_llama_models(config.llama_models)
@@ -240,7 +240,9 @@ def run_non_interactive(args, assistant):
 
 
 class CLIChatSession(ChatSession):
-    def __init__(self, assistant: Assistant, markdown: bool, show_price: bool, stream: bool):
+    def __init__(
+        self, assistant: Assistant, markdown: bool, show_price: bool, stream: bool
+    ):
         listeners = [
             CLIChatListener(markdown),
             LoggingChatListener(),
@@ -256,7 +258,10 @@ class CLIChatSession(ChatSession):
 def run_interactive(args, assistant):
     logger.info("Starting a new chat session. Assistant config: %s", assistant.config)
     session = CLIChatSession(
-        assistant=assistant, markdown=args.markdown, show_price=args.show_price, stream=not args.no_stream
+        assistant=assistant,
+        markdown=args.markdown,
+        show_price=args.show_price,
+        stream=not args.no_stream,
     )
     history_filename = os.path.expanduser("~/.config/gpt-cli/history")
     os.makedirs(os.path.dirname(history_filename), exist_ok=True)
