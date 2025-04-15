@@ -92,7 +92,7 @@ def get_completion_provider(
         return LLaMACompletionProvider()
     elif model.startswith("command") or model.startswith("c4ai"):
         return CohereCompletionProvider()
-    elif model.startswith("gemini"):
+    elif model.startswith("gemini") or model.startswith("gemma"):
         return GoogleCompletionProvider()
     else:
         raise ValueError(f"Unknown model: {model}")

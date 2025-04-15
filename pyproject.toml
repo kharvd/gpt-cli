@@ -21,14 +21,13 @@ dependencies = [
     "attrs~=25.1.0",
     "black~=25.1.0",
     "cohere~=5.13.12",
-    "google-generativeai~=0.8.4",
+    "google-genai~=1.10.0",
     "openai~=1.64.0",
     "prompt-toolkit~=3.0.50",
     "pytest~=8.3.4",
     "PyYAML~=6.0.2",
     "rich~=13.9.4",
     "typing_extensions~=4.12.2",
-    "pydantic<2",
 ]
 
 [project.optional-dependencies]
