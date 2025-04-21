@@ -80,6 +80,8 @@ def get_completion_provider(
         or model.startswith("oai-compat:")
         or model.startswith("chatgpt")
         or model.startswith("o1")
+        or model.startswith("o3")
+        or model.startswith("o4")
     ):
         return OpenAICompletionProvider(
             openai_base_url_override, openai_api_key_override

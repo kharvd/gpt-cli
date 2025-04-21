@@ -1,4 +1,4 @@
-from gptcli.completion import Message, UsageEvent
+from gptcli.completion import Message, ToolCallEvent, UsageEvent
 from gptcli.session import ChatListener, ResponseStreamer
 
 
@@ -21,6 +21,10 @@ class CompositeResponseStreamer(ResponseStreamer):
     def on_thinking_token(self, token: str):
         for streamer in self.streamers:
             streamer.on_thinking_token(token)
+
+    def on_tool_call(self, tool_call: ToolCallEvent):
+        for streamer in self.streamers:
+            streamer.on_tool_call(tool_call)
 
     def __exit__(self, *args):
         for streamer in self.streamers:

@@ -2,7 +2,7 @@ import re
 from typing import Iterator, List, Optional, cast
 import openai
 from openai import OpenAI
-from openai.types.chat import ChatCompletionMessageParam
+from openai.types.responses import ResponseInputParam
 
 from gptcli.completion import (
     CompletionEvent,
@@ -12,8 +12,14 @@ from gptcli.completion import (
     BadRequestError,
     MessageDeltaEvent,
     Pricing,
+    ThinkingDeltaEvent,
+    ToolCallEvent,
     UsageEvent,
 )
+
+
+def is_reasoning_model(model: str) -> bool:
+    return model.startswith("o1") or model.startswith("o3") or model.startswith("o4")
 
 
 class OpenAICompletionProvider(CompletionProvider):
@@ -25,12 +31,6 @@ class OpenAICompletionProvider(CompletionProvider):
     def complete(
         self, messages: List[Message], args: dict, stream: bool = False
     ) -> Iterator[CompletionEvent]:
-        kwargs = {}
-        if "temperature" in args:
-            kwargs["temperature"] = args["temperature"]
-        if "top_p" in args:
-            kwargs["top_p"] = args["top_p"]
-
         model = args["model"]
         if model.startswith("oai-compat:"):
             model = model[len("oai-compat:") :]
@@ -38,46 +38,65 @@ class OpenAICompletionProvider(CompletionProvider):
         if model.startswith("oai-azure:"):
             model = model[len("oai-azure:") :]
 
+        kwargs = {}
+        is_reasoning = is_reasoning_model(args["model"])
+        if "temperature" in args and not is_reasoning:
+            kwargs["temperature"] = args["temperature"]
+        if "top_p" in args and not is_reasoning:
+            kwargs["top_p"] = args["top_p"]
+        if is_reasoning:
+            kwargs["reasoning"] = {"effort": "high", "summary": "auto"}
+            kwargs["tools"] = [
+                {"type": "web_search_preview"}
+            ]  # provide reasoning models with search capabilities
+
         try:
             if stream:
-                response_iter = self.client.chat.completions.create(
-                    messages=cast(List[ChatCompletionMessageParam], messages),
-                    stream=True,
+                response_iter = self.client.responses.create(
                     model=model,
-                    stream_options={"include_usage": True},
+                    input=cast(ResponseInputParam, messages),
+                    stream=True,
+                    store=False,
                     **kwargs,
                 )
 
                 for response in response_iter:
-                    if (
-                        len(response.choices) > 0
-                        and response.choices[0].finish_reason is None
-                        and response.choices[0].delta.content
+                    if response.type == "response.output_text.delta":
+                        yield MessageDeltaEvent(response.delta)
+                    elif response.type == "response.reasoning_summary_text.delta":
+                        yield ThinkingDeltaEvent(response.delta)
+                    elif response.type == "response.reasoning_summary_part.done":
+                        yield ThinkingDeltaEvent("\n\n")
+                    elif response.type == "response.web_search_call.in_progress":
+                        yield ToolCallEvent("Searching the web...")
+                    elif response.type == "response.completed" and (
+                        pricing := gpt_pricing(args["model"])
                     ):
-                        yield MessageDeltaEvent(response.choices[0].delta.content)
-
-                    if response.usage and (pricing := gpt_pricing(args["model"])):
-                        yield UsageEvent.with_pricing(
-                            prompt_tokens=response.usage.prompt_tokens,
-                            completion_tokens=response.usage.completion_tokens,
-                            total_tokens=response.usage.total_tokens,
-                            pricing=pricing,
-                        )
+                        if response.response.usage:
+                            yield UsageEvent.with_pricing(
+                                prompt_tokens=response.response.usage.input_tokens,
+                                completion_tokens=response.response.usage.output_tokens,
+                                total_tokens=response.response.usage.input_tokens
+                                + response.response.usage.output_tokens,
+                                pricing=pricing,
+                            )
             else:
-                response = self.client.chat.completions.create(
-                    messages=cast(List[ChatCompletionMessageParam], messages),
+                response = self.client.responses.create(
                     model=model,
+                    input=cast(ResponseInputParam, messages),
                     stream=False,
+                    store=False,
                     **kwargs,
                 )
-                next_choice = response.choices[0]
-                if next_choice.message.content:
-                    yield MessageDeltaEvent(next_choice.message.content)
+
+                yield MessageDeltaEvent(response.output_text)
+
                 if response.usage and (pricing := gpt_pricing(args["model"])):
                     yield UsageEvent.with_pricing(
-                        prompt_tokens=response.usage.prompt_tokens,
-                        completion_tokens=response.usage.completion_tokens,
-                        total_tokens=response.usage.total_tokens,
+                        prompt_tokens=response.usage.input_tokens,
+                        completion_tokens=response.usage.output_tokens,
+                        total_tokens=response.usage.input_tokens
+                        + response.usage.output_tokens,
                         pricing=pricing,
                     )
 

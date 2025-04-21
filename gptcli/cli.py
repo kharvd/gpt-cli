@@ -1,5 +1,4 @@
 from typing import Optional
-from venv import logger
 
 from openai import BadRequestError, OpenAIError
 from prompt_toolkit import PromptSession
@@ -11,6 +10,7 @@ from rich.live import Live
 from rich.markdown import Markdown
 from rich.text import Text
 
+from gptcli.completion import ToolCallEvent
 from gptcli.session import (
     ALL_COMMANDS,
     COMMAND_CLEAR,
@@ -88,12 +88,15 @@ class CLIResponseStreamer(ResponseStreamer):
 
     def on_thinking_token(self, token: str):
         if self.thinking_printer is None:
-            self.console.print("\n[bold blue]Thinking...[/bold blue]", end="\n\n")
+            self.console.print("[bold blue]Thinking...[/bold blue]", end="\n\n")
             self.thinking_printer = StreamingMarkdownPrinter(
                 self.console, self.markdown, style="dim blue"
             )
             self.thinking_printer.__enter__()
         self.thinking_printer.print(token)
+
+    def on_tool_call(self, tool_call: ToolCallEvent):
+        self.console.print(f"[bold green]{tool_call.text}[/bold green]", end="\n")
 
     def __exit__(self, *args):
         if self.thinking_printer:

@@ -4,6 +4,7 @@ from gptcli.completion import (
     Message,
     CompletionError,
     BadRequestError,
+    ToolCallEvent,
     UsageEvent,
 )
 from typing import List, Optional
@@ -17,6 +18,9 @@ class ResponseStreamer:
         pass
 
     def on_thinking_token(self, token: str):
+        pass
+
+    def on_tool_call(self, tool_call: ToolCallEvent):
         pass
 
     def __exit__(self, *args):
@@ -123,6 +127,8 @@ class ChatSession:
                         stream.on_next_token(event.text)
                     elif event.type == "thinking_delta":
                         stream.on_thinking_token(event.text)
+                    elif event.type == "tool_call":
+                        stream.on_tool_call(event)
                     elif event.type == "usage":
                         usage = event
 
