@@ -2,6 +2,8 @@
 
 Command-line interface for ChatGPT Claude and Bard.
 
+Also available in [French / Disponible en Français](README.fr.md)!
+
 ![screenshot](https://github.com/kharvd/gpt-cli/assets/466920/ecbcccc4-7cfa-4c04-83c3-a822b6596f01)
 
 ## Features
@@ -102,6 +104,24 @@ optional arguments:
 
 Type `:q` or Ctrl-D to exit, `:c` or Ctrl-C to clear the conversation, `:r` or Ctrl-R to re-generate the last response.
 To enter multi-line mode, enter a backslash `\` followed by a new line. Exit the multi-line mode by pressing ESC and then Enter.
+
+### Switching Language
+
+You can switch the language of the CLI's interface messages during an interactive session.
+Type `--lang <language_code>` as your prompt. Supported codes are:
+- `en` for English
+- `fr` for French
+
+Example:
+```
+> --lang fr
+```
+The CLI's prompts and messages will now be in French. To switch back to English:
+```
+> --lang en
+```
+
+### Overriding Model Parameters
 
 You can override the model parameters using `--model`, `--temperature` and `--top_p` arguments at the end of your prompt. For example:
 
