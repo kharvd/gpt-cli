@@ -153,8 +153,10 @@ def validate_args(args):
 def main():
     config_file_path = choose_config_file(CONFIG_FILE_PATHS)
     if config_file_path:
+        logger.info(f"Using configuration file: {config_file_path}")
         config = read_yaml_config(config_file_path)
     else:
+        logger.info("No configuration file found. Using default settings and environment variables.")
         config = GptCliConfig()
     args = parse_args(config)
 
@@ -174,7 +176,15 @@ def main():
         openai.api_key = config.openai_api_key
     else:
         print(
-            "No API key found. Please set the OPENAI_API_KEY environment variable or `api_key: <key>` value in ~/.config/gpt-cli/gpt.yml"
+            "OpenAI API key is missing.\n"
+            "You can provide the key in one of two ways:\n"
+            "1. Set the OPENAI_API_KEY environment variable.\n"
+            "   e.g., export OPENAI_API_KEY='your_key_here'\n"
+            "2. Add `api_key: <your_key>` or `openai_api_key: <your_key>` to a configuration file.\n"
+            "   The configuration files are located at:\n"
+            "   - ~/.config/gpt-cli/gpt.yml\n"
+            "   - ~/.gptrc\n"
+            "   If none of these files exist, you can create one."
         )
         sys.exit(1)
 
